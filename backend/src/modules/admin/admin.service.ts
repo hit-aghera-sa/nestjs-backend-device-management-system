@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { sign, Secret, SignOptions} from "jsonwebtoken";
 import crypto from "crypto";
 import AdminRepository from "./admin.repository";
+import AdminModel from "./admin.model";
 import AppError from "../../core/errors/AppError";
 import { jwtConfig } from "../../config/jwt.config";
 import { sendEmail } from "../../core/utils/email.util";
@@ -59,10 +60,10 @@ class AdminService {
     };
   
     const token = sign(
-      { id: adminId, role: admin.role },
+      { id: adminId, role: admin.role, email: admin.email },
       jwtSecret,
       options
-    );
+    );    
   
     return { admin, token };
   }
@@ -99,6 +100,65 @@ class AdminService {
     }
 
     return true;
+  }
+
+  async getCurrentAdmin(id: string) {
+    const admin = await AdminRepository.findById(id);
+    if (!admin) throw new AppError("Admin not found", 404);
+    return admin;
+  }
+
+  async updateProfile(id: string, data: { fullName?: string; email?: string }) {
+    const updated = await AdminModel.findByIdAndUpdate(
+      id, 
+      { $set: data },
+      { new: true }
+    ).exec();
+    
+    if (!updated) throw new AppError("Admin not found", 404);
+    return updated;
+  }
+
+  async changePassword(id: string, oldPassword: string, newPassword: string) {
+    const admin = await AdminRepository.findById(id);
+    if (!admin) throw new AppError("Admin not found", 404);
+
+    const match = await bcrypt.compare(oldPassword, admin.password);
+    if (!match) throw new AppError("Old password is incorrect", 400);
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await AdminRepository.updatePassword(id, hashed);
+
+    return true;
+  }
+
+  // Master admin management methods
+  async getAllAdmins() {
+    return AdminRepository.findAll();
+  }
+
+  async getAdminById(id: string) {
+    const admin = await AdminRepository.findById(id);
+    if (!admin) throw new AppError("Admin not found", 404);
+    return admin;
+  }
+
+  async updateAdmin(id: string, data: any) {
+    const updated = await AdminRepository.update(id, data);
+    if (!updated) throw new AppError("Admin not found", 404);
+    return updated;
+  }
+
+  async deactivateAdmin(id: string) {
+    const admin = await AdminRepository.update(id, { isActive: false });
+    if (!admin) throw new AppError("Admin not found", 404);
+    return admin;
+  }
+
+  async activateAdmin(id: string) {
+    const admin = await AdminRepository.update(id, { isActive: true });
+    if (!admin) throw new AppError("Admin not found", 404);
+    return admin;
   }
 }
 

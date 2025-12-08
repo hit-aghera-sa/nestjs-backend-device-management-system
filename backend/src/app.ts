@@ -15,6 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 app.use(morgan("combined", { stream: { write: (msg) => logger.info(msg.trim()) } }));
 
+app.use(express.json());
+
 // mount API routes
 app.use("/api", routes);
 

@@ -1,19 +1,23 @@
 import { RequestHandler } from "express";
-import Joi from "joi";
+import Joi = require("joi");
 import AppError from "../errors/AppError";
 
-/**
- * Validates req.body against a Joi schema. Use like:
- * router.post("/", validate(bodySchema), controller.create)
- */
-export const validate = (schema: Joi.ObjectSchema): RequestHandler => {
+export const validate = (schema: any): RequestHandler => {
   return (req, _res, next) => {
-    const { error } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    const body = req.body ?? {};   // ⭐ This fixes empty-body 500 errors
+
+    const { error } = schema.validate(body, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
+
     if (error) {
-      const msg = error.details.map(d => d.message).join(", ");
-      return next(new AppError(msg, 400));
+      const msg = error.details
+        .map((d: any) => d.message)
+        .join(", ");
+      return next(new AppError(msg, 400)); // always a 400, never 500
     }
+
     next();
   };
 };
-

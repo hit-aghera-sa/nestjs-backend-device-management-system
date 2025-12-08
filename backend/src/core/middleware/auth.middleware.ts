@@ -16,7 +16,12 @@ export default function authMiddleware(req: AuthRequest, _res: Response, next: N
   const token = authHeader.split(" ")[1];
   try {
     const payload = jwt.verify(token, jwtConfig.secret) as any;
-    req.auth = { id: payload.id, role: payload.role };
+    req.user = {
+      id: payload.id,
+      role: payload.role,
+      email: payload.email
+    };
+    
     next();
   } catch (err) {
     return next(new AppError("Invalid or expired token", 401));

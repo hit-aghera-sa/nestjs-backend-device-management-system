@@ -28,6 +28,14 @@ class AdminRepository {
   async updatePassword(id: string, hashed: string) {
     return AdminModel.findByIdAndUpdate(id, { password: hashed }, { new: true }).exec();
   }
+
+  async findAll() {
+    return AdminModel.find().exec();
+  }
+
+  async update(id: string, data: any) {
+    return AdminModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  }
 }
 
 export default new AdminRepository();

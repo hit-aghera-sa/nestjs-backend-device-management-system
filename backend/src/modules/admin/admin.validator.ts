@@ -1,4 +1,4 @@
-import Joi from "joi";
+import * as Joi from "joi";
 
 export const registerSchema = Joi.object({
   fullName: Joi.string().min(3).max(100).required(),

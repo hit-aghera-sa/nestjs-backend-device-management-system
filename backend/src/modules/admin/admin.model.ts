@@ -6,6 +6,7 @@ export interface IAdmin extends Document {
   password: string;
   role: "ADMIN" | "MASTER";
   isVerified: boolean;
+  isActive: boolean;
   verificationToken?: string | null;
   verificationExpires?: Date | null;
   createdAt: Date;
@@ -19,6 +20,7 @@ const AdminSchema: Schema = new Schema<IAdmin>(
     password: { type: String, required: true },
     role: { type: String, enum: ["ADMIN", "MASTER"], default: "ADMIN" },
     isVerified: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
     verificationToken: { type: String, default: null },
     verificationExpires: { type: Date, default: null },
   },

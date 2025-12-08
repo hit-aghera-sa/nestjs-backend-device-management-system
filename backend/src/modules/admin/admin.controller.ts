@@ -43,6 +43,86 @@ class AdminController {
       next(err);
     }
   }
+
+  async me(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new AppError("Unauthorized", 401);
+      const adminId = req.user.id;
+      const data = await AdminService.getCurrentAdmin(req.user.id);
+      return res.status(200).json(successResponse(data));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updateProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) throw new AppError("Unauthorized", 401);
+      const adminId = req.user.id;
+      const data = await AdminService.updateProfile(req.user.id, req.body);
+      return res.status(200).json(successResponse(data, "Profile updated"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { oldPassword, newPassword } = req.body;
+      if (!req.user) throw new AppError("Unauthorized", 401);
+      const adminId = req.user.id;
+      await AdminService.changePassword(adminId, oldPassword, newPassword);
+      return res.status(200).json(successResponse(null, "Password changed"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Master admin management endpoints
+  async getAllAdmins(req: Request, res: Response, next: NextFunction) {
+    try {
+      const admins = await AdminService.getAllAdmins();
+      return res.status(200).json(successResponse(admins));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getAdminById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const admin = await AdminService.getAdminById(req.params.id);
+      return res.status(200).json(successResponse(admin));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async updateAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const admin = await AdminService.updateAdmin(req.params.id, req.body);
+      return res.status(200).json(successResponse(admin, "Admin updated"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async deactivateAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      await AdminService.deactivateAdmin(req.params.id);
+      return res.status(200).json(successResponse(null, "Admin deactivated"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async activateAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      await AdminService.activateAdmin(req.params.id);
+      return res.status(200).json(successResponse(null, "Admin activated"));
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default new AdminController();

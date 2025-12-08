@@ -2,6 +2,7 @@ import DeviceRepository from "./device.repository";
 import { IDevice } from "./device.model";
 import AppError from "../../core/errors/AppError";
 import { logger } from "../../core/logger/logger";
+import AssignmentRepository from "../assignment/assignment.repository";
 
 class DeviceService {
   // ----------------------------
@@ -74,21 +75,18 @@ class DeviceService {
 
   // ----------------------------
   // Delete Device
-  // Prevent deletion if device is assigned
-  // Placeholder until Assignment Module
+  // Prevent deletion if device is assigned to an employee
   // ----------------------------
   async deleteDevice(id: string) {
     const device = await DeviceRepository.findById(id);
     if (!device) throw new AppError("Device not found", 404);
 
-    // Placeholder logic — will be replaced after Assignment Module
-    const hasActiveAssignment = device.status === "ASSIGNED";
-    if (hasActiveAssignment) {
-      throw new AppError("Cannot delete device while assigned to an employee", 400);
+    const activeAssignment = await AssignmentRepository.findActiveByDevice(id);
+    if (activeAssignment) {
+      throw new AppError("Cannot delete a device that is assigned to an employee", 400);
     }
 
-    const deleted = await DeviceRepository.delete(id);
-    return deleted;
+    return await DeviceRepository.delete(id);
   }
 }
 

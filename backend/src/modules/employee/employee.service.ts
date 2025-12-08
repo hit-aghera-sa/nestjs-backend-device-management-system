@@ -5,6 +5,7 @@ import { IEmployee } from "./employee.model";
 import AppError from "../../core/errors/AppError";
 import { sendEmail } from "../../core/utils/email.util";
 import { logger } from "../../core/logger/logger";
+import AssignmentRepository from "../assignment/assignment.repository";
 
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -78,15 +79,15 @@ class EmployeeService {
   // (Prevent delete if assigned devices exist)
   // ----------------------------
   async deleteEmployee(id: string) {
-    // TODO: integrate with Assignment module later
-    const hasDevicesAssigned = false; // placeholder until device assignment module exists
-    if (hasDevicesAssigned) {
+    const employee = await EmployeeRepository.findById(id);
+    if (!employee) throw new AppError("Employee not found", 404);
+
+    const activeAssignment = await AssignmentRepository.findActiveByEmployee(id);
+    if (activeAssignment) {
       throw new AppError("Cannot delete employee with assigned devices", 400);
     }
 
-    const deleted = await EmployeeRepository.delete(id);
-    if (!deleted) throw new AppError("Employee not found", 404);
-    return deleted;
+    return await EmployeeRepository.delete(id);
   }
 
   // ----------------------------

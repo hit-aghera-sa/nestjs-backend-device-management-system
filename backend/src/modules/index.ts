@@ -4,6 +4,7 @@ import adminRoutes from "./admin/admin.routes";
 import employeeRoutes from "./employee/employee.routes";
 import deviceRoutes from "./device/device.routes";
 import assignmentRoutes from "./assignment/assignment.routes";
+import dashboardRoutes from "./dashboard/dashboard.routes";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use("/auth", adminRoutes);
 router.use("/employees", employeeRoutes);
 router.use("/devices", deviceRoutes);
 router.use("/assignments", assignmentRoutes);
+router.use("/dashboard", dashboardRoutes);
 
 export default router;

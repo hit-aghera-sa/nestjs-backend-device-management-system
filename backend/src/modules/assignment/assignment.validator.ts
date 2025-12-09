@@ -8,6 +8,5 @@ export const assignDeviceSchema = Joi.object({
 
 export const returnDeviceSchema = Joi.object({
   notes: Joi.string().allow(null, ""),
+  deviceStatus: Joi.string().valid("AVAILABLE", "DAMAGED", "MAINTENANCE").required()
 });
-
-

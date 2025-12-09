@@ -5,6 +5,7 @@ import { IAssignment } from "./assignment.model";
 import AppError from "../../core/errors/AppError";
 import mongoose from "mongoose";
 import { logger } from "../../core/logger/logger";
+import { DeviceStatus } from "../device/device.model";
 
 class AssignmentService {
   // ----------------------------
@@ -28,8 +29,8 @@ class AssignmentService {
     // Validate device
     const device = await DeviceRepository.findById(deviceId);
     if (!device) throw new AppError("Device not found", 404);
-    if (device.status === "ASSIGNED") {
-      throw new AppError("Device is already assigned to another employee", 400);
+    if (device.status !== "AVAILABLE") {
+      throw new AppError("Device is not available for assignment", 400);
     }
 
     // Check for existing assignment for employee
@@ -56,39 +57,72 @@ class AssignmentService {
   // Return a device from assignment
   // ----------------------------
 
-  async returnDevice(assignmentId: string, notes?: string) {
-  if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
-    throw new AppError("Invalid assignment ID", 400);
+//   async returnDevice(assignmentId: string, notes?: string) {
+//   if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
+//     throw new AppError("Invalid assignment ID", 400);
+//   }
+
+//   const assignment = await AssignmentRepository.findById(assignmentId);
+//   if (!assignment) throw new AppError("Assignment not found", 404);
+
+//   if (assignment.status !== "ASSIGNED") {
+//     throw new AppError("This assignment is already returned", 400);
+//   }
+
+//   console.log("first DEBUG assignment.device =", assignment.device);
+
+//   const updatedAssignment = await AssignmentRepository.markReturned(
+//     assignmentId,
+//     notes
+//   );
+
+//   const deviceId =
+//     assignment.device instanceof mongoose.Types.ObjectId
+//       ? assignment.device.toString()
+//       : assignment.device._id.toString();
+
+//   await DeviceRepository.update(deviceId, { status: "AVAILABLE" });
+
+//   console.log("second DEBUG deviceId =", deviceId);
+
+//   return updatedAssignment;
+// }
+  async returnDevice(assignmentId: string, notes: string, deviceStatus: string) {
+    if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
+      throw new AppError("Invalid assignment ID", 400);
+    }
+
+    const assignment = await AssignmentRepository.findById(assignmentId);
+    if (!assignment) throw new AppError("Assignment not found", 404);
+
+    if (assignment.status !== "ASSIGNED") {
+      throw new AppError("This assignment is already returned", 400);
+    }
+
+    // Mark assignment as returned
+    const updatedAssignment = await AssignmentRepository.markReturned(
+      assignmentId,
+      notes
+    );
+
+    // Safely extract deviceId
+    const deviceField = assignment.device as mongoose.Types.ObjectId | { _id: any } | null;
+
+    const deviceId =
+      deviceField instanceof mongoose.Types.ObjectId
+        ? deviceField.toString()
+        : deviceField?._id?.toString();
+    
+
+    if (!deviceId) {
+      throw new AppError("Unable to extract device ID", 500);
+    }
+
+    // Update device status to selected option
+    await DeviceRepository.update(deviceId, { status: deviceStatus as DeviceStatus });
+
+    return updatedAssignment;
   }
-
-  const assignment = await AssignmentRepository.findById(assignmentId);
-  if (!assignment) throw new AppError("Assignment not found", 404);
-
-  if (assignment.status !== "ASSIGNED") {
-    throw new AppError("This assignment is already returned", 400);
-  }
-
-  console.log("first DEBUG assignment.device =", assignment.device);
-
-  // Mark assignment as returned
-  const updatedAssignment = await AssignmentRepository.markReturned(
-    assignmentId,
-    notes
-  );
-
-  // Extract deviceId safely
-  const deviceId =
-    assignment.device instanceof mongoose.Types.ObjectId
-      ? assignment.device.toString()
-      : assignment.device._id.toString();
-
-  // Update device → AVAILABLE
-  await DeviceRepository.update(deviceId, { status: "AVAILABLE" });
-
-  console.log("second DEBUG deviceId =", deviceId);
-
-  return updatedAssignment;
-}
 
 
   // ----------------------------

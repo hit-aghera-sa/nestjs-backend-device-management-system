@@ -17,8 +17,8 @@ class AssignmentController {
   async returnDevice(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const { notes } = req.body;
-      const updated = await AssignmentService.returnDevice(id, notes);
+      const { notes, deviceStatus } = req.body;
+      const updated = await AssignmentService.returnDevice(id, notes, deviceStatus);
       return res
         .status(200)
         .json(successResponse(updated, "Device returned successfully"));

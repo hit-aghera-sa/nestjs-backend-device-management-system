@@ -27,3 +27,8 @@ export const updateDeviceSchema = Joi.object({
   specifications: Joi.string().allow(null, ""),
 }).min(1);
 
+export const updateDeviceStatusSchema = Joi.object({
+  status: Joi.string()
+    .valid("AVAILABLE", "DAMAGED", "MAINTENANCE")
+    .required()
+});

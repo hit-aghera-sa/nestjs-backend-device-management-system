@@ -34,5 +34,3 @@ const AssignmentSchema = new Schema<IAssignment>(
 
 export const AssignmentModel = mongoose.model<IAssignment>("Assignment", AssignmentSchema);
 export default AssignmentModel;
-
-

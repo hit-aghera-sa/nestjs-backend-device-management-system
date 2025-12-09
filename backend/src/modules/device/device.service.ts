@@ -1,5 +1,5 @@
 import DeviceRepository from "./device.repository";
-import { IDevice } from "./device.model";
+import { IDevice, DeviceStatus } from "./device.model";
 import AppError from "../../core/errors/AppError";
 import { logger } from "../../core/logger/logger";
 import AssignmentRepository from "../assignment/assignment.repository";
@@ -87,6 +87,29 @@ class DeviceService {
     }
 
     return await DeviceRepository.delete(id);
+  }
+
+  // ----------------------------
+  // Update Device Status
+  // Only allows updating to AVAILABLE, DAMAGED, or MAINTENANCE
+  // ASSIGNED status is managed through the assignment system
+  // ----------------------------
+  async updateStatus(id: string, status: DeviceStatus) {
+    const device = await DeviceRepository.findById(id);
+    if (!device) throw new AppError("Device not found", 404);
+
+    // You cannot manually set ASSIGNED
+    if (status === "ASSIGNED") {
+      throw new AppError("Cannot manually set device status to ASSIGNED", 400);
+    }
+
+    // If device is currently assigned, allow ONLY assignment service to change it
+    if (device.status === "ASSIGNED") {
+      throw new AppError("Cannot change status of an assigned device", 400);
+    }
+
+    const updated = await DeviceRepository.update(id, { status });
+    return updated;
   }
 }
 

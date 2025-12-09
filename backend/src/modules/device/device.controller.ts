@@ -43,6 +43,18 @@ class DeviceController {
     }
   }
 
+  async updateStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { status } = req.body;
+      const updated = await DeviceService.updateStatus(req.params.id, status);
+      return res
+        .status(200)
+        .json(successResponse(updated, "Device status updated successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async deleteDevice(req: Request, res: Response, next: NextFunction) {
     try {
       await DeviceService.deleteDevice(req.params.id);

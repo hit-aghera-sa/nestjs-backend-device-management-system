@@ -1,7 +1,6 @@
 import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding, Routes } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideClientHydration } from '@angular/platform-browser';
 
 import { authGuard } from './core/guards/auth.guard';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -11,11 +10,11 @@ export const routes: Routes = [
     path: 'auth',
     loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
-  // {
-  //   path: 'dashboard',
-  //   canActivate: [authGuard],
-  //   loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
-  // },
+  {
+    path: 'dashboard',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+  },
   // {
   //   path: 'employees',
   //   canActivate: [authGuard],
@@ -46,7 +45,6 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
 
     provideRouter(routes, withComponentInputBinding()),
-    provideClientHydration(),
     provideHttpClient(
       withInterceptors([authInterceptor])
     )

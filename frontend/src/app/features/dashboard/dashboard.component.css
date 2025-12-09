@@ -1,0 +1,86 @@
+/* src/app/features/dashboard/dashboard.component.css */
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --sidebar-width: 16rem;
+  --sidebar-collapsed: 5rem;
+  --transition-speed: 300ms;
+}
+
+/* Navigation Active State */
+.nav-item-active {
+  background-color: rgba(37, 99, 235, 0.1);
+  border-left: 3px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.nav-item-active .icon {
+  color: var(--primary-color);
+}
+
+.nav-item-active .label {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Mobile Sidebar States */
+.mobile-sidebar.open {
+  transform: translateX(0);
+}
+
+.mobile-sidebar-overlay.open {
+  display: block;
+  opacity: 1;
+}
+
+.mobile-sidebar-overlay {
+  opacity: 0;
+  transition: opacity var(--transition-speed) ease;
+}
+
+/* Smooth transitions for sidebar collapse */
+#sidebar.collapsed {
+  width: var(--sidebar-collapsed);
+}
+
+#sidebar.collapsed .label {
+  display: none;
+}
+
+#sidebar.collapsed #collapse-btn .icon {
+  transform: rotate(180deg);
+}
+
+/* Accessibility focus styles */
+.nav-link:focus-visible,
+#collapse-btn:focus-visible,
+#logout-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Responsive table container */
+@media (max-width: 768px) {
+  .mobile-sidebar-overlay {
+    z-index: 40;
+  }
+  
+  .mobile-sidebar {
+    z-index: 50;
+  }
+}
+
+/* Print styles */
+@media print {
+  #sidebar,
+  .mobile-sidebar-overlay,
+  .mobile-sidebar,
+  header {
+    display: none !important;
+  }
+  
+  #app-content {
+    padding: 0;
+    margin: 0;
+  }
+}

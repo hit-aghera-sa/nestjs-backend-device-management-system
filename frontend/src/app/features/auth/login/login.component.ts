@@ -34,15 +34,16 @@ export class LoginComponent {
       this.markFormGroupTouched(this.loginForm);
       return;
     }
-
+    
     this.loading.set(true);
     this.errorMessage.set(null);
-
+    this.loginForm.disable();
+    
     const credentials: LoginCredentials = {
       email: this.loginForm.value.email,
       password: this.loginForm.value.password
     };
-
+    
     try {
       const success = await this.authService.login(credentials);
       if (success) {
@@ -51,15 +52,13 @@ export class LoginComponent {
         this.errorMessage.set('Invalid credentials. Please try again.');
       }
     } catch (error: any) {
-      this.errorMessage.set(
-        error?.error?.message || 
-        error?.message || 
-        'An error occurred during login. Please try again.'
-      );
+      this.errorMessage.set(error?.error?.message || 'Login failed.');
     } finally {
       this.loading.set(false);
+      this.loginForm.enable();
     }
   }
+
 
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.values(formGroup.controls).forEach(control => {

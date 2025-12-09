@@ -52,29 +52,35 @@ export class AuthService {
   // -----------------------------------------------------------
   // LOGIN
   // -----------------------------------------------------------
-  async login(credentials: LoginCredentials): Promise<boolean> {
-    try {
-      const response = await firstValueFrom(
-        this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, credentials)
-      );
+  login(credentials: LoginCredentials): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, credentials)
+        .subscribe({
+          next: (res: any) => {
+            const token = res?.data?.token;
+            const user = res?.data?.admin;
 
-      const token = response?.data?.token;
-      const user = response?.data?.admin;
+            if (!token) {
+              resolve(false);
+              return;
+            }
 
-      // If backend sends incorrect structure OR login fails
-      if (!token || !user) return false;
+            // Save to localStorage
+            localStorage.setItem('token', token);
 
-      // Save state
-      this.state.set({ token, user });
-      this.saveAuthState();
+            // Update signal state  <-- REQUIRED
+            this.state.set({ token, user });
+            this.saveAuthState();
 
-      return true;
-
-    } catch (error) {
-      console.error('Login failed:', error);
-      return false;
-    }
+            resolve(true);
+          },
+          error: (err) => {
+            reject(err);
+          }
+        });
+    });
   }
+
 
   // -----------------------------------------------------------
   // LOGOUT
@@ -95,4 +101,18 @@ export class AuthService {
   getToken(): string | null {
     return this.state().token;
   }
+
+  getUser() {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload;
+    } catch (err) {
+      return null;
+    }
+  }
+
+
 }

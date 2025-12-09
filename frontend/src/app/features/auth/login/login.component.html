@@ -40,7 +40,6 @@
             formControlName="email"
             [class.border-red-500]="hasError('email', 'required') || hasError('email', 'email')"
             [class.border-gray-300]="!hasError('email', 'required') && !hasError('email', 'email')"
-            [disabled]="loading()"
             class="input-field w-full px-4 py-3 border rounded-lg bg-gray-50 focus:bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="admin@example.com">
           
@@ -67,7 +66,6 @@
             formControlName="password"
             [class.border-red-500]="hasError('password', 'required') || hasError('password', 'minlength')"
             [class.border-gray-300]="!hasError('password', 'required') && !hasError('password', 'minlength')"
-            [disabled]="loading()"
             class="input-field w-full px-4 py-3 border rounded-lg bg-gray-50 focus:bg-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="••••••">
           
@@ -86,7 +84,6 @@
         <!-- Submit Button -->
         <button
           type="submit"
-          [disabled]="loginForm.invalid || loading()"
           [class.opacity-50]="loginForm.invalid"
           [class.cursor-not-allowed]="loginForm.invalid || loading()"
           class="btn-primary w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:hover:from-blue-600 disabled:hover:to-blue-700">

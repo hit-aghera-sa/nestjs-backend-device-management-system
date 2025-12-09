@@ -14,7 +14,7 @@ class DeviceService {
 
     const device = await DeviceRepository.create({
       deviceName: data.deviceName,
-      category: data.category,
+      category: data.category?.toLocaleLowerCase(),
       brand: data.brand || null,
       modelNumber: data.modelNumber || null,
       serialNumber: data.serialNumber,

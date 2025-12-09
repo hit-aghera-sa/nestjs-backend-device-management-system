@@ -23,7 +23,6 @@ class EmployeeService {
       department: data.department,
       designation: data.designation ?? undefined,
       contactNumber: data.contactNumber ?? undefined,
-      status: data.status || "ACTIVE",
       isVerified: false,
     });
 
@@ -34,7 +33,7 @@ class EmployeeService {
     await EmployeeRepository.setVerificationToken(employee._id.toString(), token, expires);
 
     try {
-      const verifyLink = `${process.env.FRONTEND_ORIGIN}/verify-employee?token=${token}`;
+      const verifyLink = `${process.env.BACKEND_ORIGIN}/api/employees/verify/${token}`;
       const html = `
         <p>Hello ${employee.fullName},</p>
         <p>Please verify your email by clicking the link below:</p>

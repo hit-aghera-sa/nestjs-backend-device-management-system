@@ -6,7 +6,11 @@ export interface IEmployee extends Document {
   department: string;
   designation?: string;
   contactNumber?: string;
-  status: "ACTIVE" | "INACTIVE";
+  status: { 
+    type: String, 
+    enum: ["ACTIVE", "INACTIVE"], 
+    default: "ACTIVE" 
+  },
   isVerified: boolean;
   verificationToken?: string | null;
   verificationExpires?: Date | null;

@@ -45,28 +45,40 @@ class AdminService {
 
   async login(payload: { email: string; password: string }) {
     const admin = await AdminRepository.findByEmail(payload.email);
-    if (!admin) throw new AppError("Invalid credentials", 401);
-    if (!admin.isVerified) throw new AppError("Please verify your email before login", 401);
-  
+
+    if (!admin) {
+      throw new AppError("Admin does not exist", 404);
+    }
+
+    if (admin.isActive !== true) {
+      throw new AppError("Admin does not exist", 404);
+    }
+
+    if (!admin.isVerified) {
+      throw new AppError("Please verify your email before login", 401);
+    }
+
     const matched = await bcrypt.compare(payload.password, admin.password);
-    if (!matched) throw new AppError("Invalid credentials", 401);
-  
+    if (!matched) {
+      throw new AppError("Invalid credentials", 401);
+    }
+
     const adminId = admin._id.toString();
-  
     const jwtSecret: Secret = jwtConfig.secret;
-  
+
     const options: SignOptions = {
-      expiresIn: jwtConfig.expiresIn as any
+      expiresIn: jwtConfig.expiresIn as any,
     };
-  
+
     const token = sign(
       { id: adminId, role: admin.role, email: admin.email },
       jwtSecret,
       options
-    );    
-  
+    );
+
     return { admin, token };
   }
+
 
   async verifyEmail(token: string) {
     const record = await AdminRepository.findByVerificationToken(token);

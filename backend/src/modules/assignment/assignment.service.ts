@@ -13,6 +13,13 @@ class AssignmentService {
   async assignDevice(data: { employeeId: string; deviceId: string; notes?: string }) {
     const { employeeId, deviceId, notes } = data;
 
+    if (!mongoose.Types.ObjectId.isValid(employeeId)) {
+      throw new AppError("Invalid employee ID", 400);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(deviceId)) {
+      throw new AppError("Invalid device ID", 400);
+    }
     // Validate employee
     const employee = await EmployeeRepository.findById(employeeId);
     if (!employee) throw new AppError("Employee not found", 404);
@@ -36,7 +43,6 @@ class AssignmentService {
       employee: new mongoose.Types.ObjectId(employeeId),
       device: new mongoose.Types.ObjectId(deviceId),
       notes: notes || null,
-      status: "ASSIGNED",
       assignedAt: new Date(),
     });
 
@@ -49,22 +55,41 @@ class AssignmentService {
   // ----------------------------
   // Return a device from assignment
   // ----------------------------
+
   async returnDevice(assignmentId: string, notes?: string) {
-    const assignment = await AssignmentRepository.findById(assignmentId);
-    if (!assignment) throw new AppError("Assignment not found", 404);
-
-    if (assignment.status !== "ASSIGNED") {
-      throw new AppError("This assignment is already returned", 400);
-    }
-
-    // Mark assignment as returned
-    const updatedAssignment = await AssignmentRepository.markReturned(assignmentId, notes);
-
-    // Update device → AVAILABLE
-    await DeviceRepository.update(assignment.device.toString(), { status: "AVAILABLE" });
-
-    return updatedAssignment;
+  if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
+    throw new AppError("Invalid assignment ID", 400);
   }
+
+  const assignment = await AssignmentRepository.findById(assignmentId);
+  if (!assignment) throw new AppError("Assignment not found", 404);
+
+  if (assignment.status !== "ASSIGNED") {
+    throw new AppError("This assignment is already returned", 400);
+  }
+
+  console.log("first DEBUG assignment.device =", assignment.device);
+
+  // Mark assignment as returned
+  const updatedAssignment = await AssignmentRepository.markReturned(
+    assignmentId,
+    notes
+  );
+
+  // Extract deviceId safely
+  const deviceId =
+    assignment.device instanceof mongoose.Types.ObjectId
+      ? assignment.device.toString()
+      : assignment.device._id.toString();
+
+  // Update device → AVAILABLE
+  await DeviceRepository.update(deviceId, { status: "AVAILABLE" });
+
+  console.log("second DEBUG deviceId =", deviceId);
+
+  return updatedAssignment;
+}
+
 
   // ----------------------------
   // Get assignment details by ID

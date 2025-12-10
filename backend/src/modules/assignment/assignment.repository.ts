@@ -43,6 +43,10 @@ class AssignmentRepository {
       .populate("device")
       .exec();
   }
+  async delete(id: string) {
+  return AssignmentModel.findByIdAndDelete(id).exec();
+}
+
 }
 
 export default new AssignmentRepository();

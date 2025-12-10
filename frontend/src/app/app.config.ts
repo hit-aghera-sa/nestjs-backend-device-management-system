@@ -97,16 +97,21 @@ export const routes: Routes = [
       import('./features/devices/devices.routes').then(m => m.DEVICES_ROUTES)
   },
 
-  // {
-  //   path: 'assignments',
-  //   canActivate: [authGuard],
-  //   loadComponent: () => import('./features/assignments/assignments.component').then(m => m.AssignmentsComponent)
-  // },
-  // {
-  //   path: 'stock',
-  //   canActivate: [authGuard],
-  //   loadComponent: () => import('./features/stock/stock.component').then(m => m.StockComponent)
-  // },
+{
+  path: 'assignments',
+  canActivate: [authGuard],
+  loadChildren: () =>
+    import('./features/assignments/assignment.routes')
+      .then(m => m.ASSIGNMENT_ROUTES)
+},
+
+{
+  path: 'stock',
+  canActivate: [authGuard],
+  loadChildren: () =>
+    import('./features/stock/stock.router').then(m => m.STOCK_ROUTES)
+},
+
   { path: '', redirectTo: '/auth/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/auth/login', pathMatch: 'full' }
 ];

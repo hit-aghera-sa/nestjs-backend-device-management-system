@@ -1,0 +1,145 @@
+<!-- src/app/features/devices/edit/device-edit.component.html -->
+
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-10 px-4">
+
+  <div class="max-w-2xl mx-auto bg-white shadow-xl rounded-xl p-8">
+
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit Device</h1>
+    <p class="text-gray-600 mb-6">Update details for this device.</p>
+
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="p-6 text-center">
+        <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto mb-3" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" class="opacity-25" stroke-width="4" stroke="currentColor" fill="none"></circle>
+          <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C6 0 0 6 0 12h4z"></path>
+        </svg>
+        <p class="text-gray-600">Loading device...</p>
+      </div>
+    }
+
+    @if (!loading()) {
+
+      <!-- Success -->
+      @if (successMessage()) {
+        <div class="p-4 mb-4 bg-green-50 border border-green-200 rounded-lg">
+          <p class="text-green-700">{{ successMessage() }}</p>
+        </div>
+      }
+
+      <!-- Error -->
+      @if (errorMessage()) {
+        <div class="p-4 mb-4 bg-red-50 border border-red-200 rounded-lg">
+          <p class="text-red-700">{{ errorMessage() }}</p>
+        </div>
+      }
+
+      <form [formGroup]="deviceForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+        <!-- Device Name -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">Device Name *</label>
+          <input type="text" formControlName="deviceName"
+                 class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                 placeholder="MacBook Pro" />
+          @if (hasError('deviceName','required')) {
+            <p class="text-red-600 text-sm">Device name is required</p>
+          }
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">Category *</label>
+          <select
+            formControlName="category"
+            class="w-full border rounded-lg px-4 py-2"
+          >
+            @for (c of categories; track c) {
+              <option [value]="c">{{ c | titlecase }}</option>
+            }
+          </select>
+          @if (hasError('category','required')) {
+            <p class="text-red-600 text-sm">Category is required</p>
+          }
+        </div>
+
+        <!-- Brand + Model -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">Brand</label>
+            <input type="text" formControlName="brand"
+                   class="w-full border rounded-lg px-4 py-2"
+                   placeholder="Apple / Dell / HP"/>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">Model Number</label>
+            <input type="text" formControlName="modelNumber"
+                   class="w-full border rounded-lg px-4 py-2"
+                   placeholder="A2338 / 5320"/>
+          </div>
+        </div>
+
+        <!-- Serial Number -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">Serial Number *</label>
+          <input type="text" formControlName="serialNumber"
+                 class="w-full border rounded-lg px-4 py-2"
+                 placeholder="SN12345678"/>
+          @if (hasError('serialNumber','required')) {
+            <p class="text-red-600 text-sm">Serial number is required</p>
+          }
+        </div>
+
+        <!-- Price + Purchase Date -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">Purchase Price</label>
+            <input type="number" formControlName="purchasePrice"
+                   class="w-full border rounded-lg px-4 py-2"/>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1">Purchase Date</label>
+            <input type="date" formControlName="purchaseDate"
+                   class="w-full border rounded-lg px-4 py-2"/>
+          </div>
+        </div>
+
+        <!-- Warranty Expiry -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">Warranty Expiry</label>
+          <input type="date" formControlName="warrantyExpiry"
+                 class="w-full border rounded-lg px-4 py-2"/>
+        </div>
+
+        <!-- Specifications -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1">Specifications</label>
+          <textarea rows="3" formControlName="specifications"
+                    class="w-full border rounded-lg px-4 py-2"
+                    placeholder="8GB RAM, 512GB SSD, Intel i5..."></textarea>
+        </div>
+
+        <!-- Submit -->
+        <div>
+          <button
+            type="submit"
+            [disabled]="deviceForm.invalid || saving()"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold
+                   transition disabled:bg-blue-300 disabled:cursor-not-allowed">
+
+            @if (saving()) {
+              Saving...
+            } @else {
+              Update Device
+            }
+          </button>
+        </div>
+
+      </form>
+    }
+  </div>
+
+</div>

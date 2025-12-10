@@ -1,0 +1,138 @@
+<!-- src/app/features/devices/list/devices-list.component.html -->
+
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+
+  <!-- Header + Search -->
+  <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+    
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Devices</h1>
+      <p class="text-gray-600">Manage and monitor all registered devices</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+        <input
+            type="text"
+            placeholder="Search devices..."
+            [value]="searchText()"
+            (input)="searchText.set($event.target.value); onSearch()"
+            class="px-4 py-2 border rounded-lg w-64 bg-white shadow-sm"
+        />
+
+        <button
+        (click)="router.navigate(['/devices/create'])"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold 
+                transition disabled:bg-blue-300 disabled:cursor-not-allowed"
+        >
+        Add Device
+        </button>
+
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (errorMessage()) {
+    <div class="p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
+      <span class="text-red-700">{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="bg-white p-12 rounded-xl shadow-sm text-center">
+      <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" class="opacity-25"></circle>
+        <path fill="currentColor" class="opacity-75"
+              d="M4 12a8 8 0 018-8V0C5 0 0 5 0 12h4z">
+        </path>
+      </svg>
+      <p class="text-gray-600">Loading devices...</p>
+    </div>
+  }
+
+  <!-- Devices Table -->
+  @if (!loading() && devices().length > 0) {
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device Info</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serial</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y">
+            @for (device of devices(); track device._id) {
+              <tr class="hover:bg-gray-50 transition">
+                
+                <!-- Device Info -->
+                <td class="px-6 py-4">
+                  <p class="font-medium text-gray-900">{{ device.deviceName }}</p>
+                  <p class="text-sm text-gray-500">{{ device.category }}</p>
+                  <p class="text-xs text-gray-400 mt-1">
+                    Added {{ device.createdAt | date:'mediumDate' }}
+                  </p>
+                </td>
+
+                <!-- Serial -->
+                <td class="px-6 py-4 text-gray-700">
+                  {{ device.serialNumber }}
+                </td>
+
+                <!-- Status -->
+                <td class="px-6 py-4">
+                  <span class="px-3 py-1 rounded-full text-xs font-medium"
+                        [class]="getStatusBadgeClass(device.status)">
+                    {{ device.status }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-2">
+
+                    <!-- View -->
+                    <button
+                      (click)="viewDevice(device._id)"
+                      class="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">
+                      View
+                    </button>
+
+                    <!-- Edit -->
+                    <button
+                      (click)="editDevice(device._id)"
+                      class="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md">
+                      Edit
+                    </button>
+
+                    <!-- Delete -->
+                    @if (device.status !== 'ASSIGNED') {
+                        <button
+                            (click)="deleteDevice(device)"
+                            class="px-3 py-1.5 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded-md">
+                            Delete
+                        </button>
+                    }
+
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && devices().length === 0 && !errorMessage()) {
+    <div class="bg-white rounded-xl shadow-sm p-12 text-center">
+      <p class="font-medium text-gray-700">No devices found</p>
+      <p class="text-gray-500 text-sm">Try adding a new device.</p>
+    </div>
+  }
+
+</div>

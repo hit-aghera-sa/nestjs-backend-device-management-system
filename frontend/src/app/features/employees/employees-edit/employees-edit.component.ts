@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EmployeesService } from '../employees.service';
+import { EmployeesService } from '../../../core/services/employees.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({

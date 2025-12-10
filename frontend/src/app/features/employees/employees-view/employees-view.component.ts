@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EmployeesService } from '../employees.service';
+import { EmployeesService } from '../../../core/services/employees.service';
 
 @Component({
   selector: 'app-employees-view',

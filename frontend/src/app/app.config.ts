@@ -3,6 +3,7 @@ import { provideRouter, withComponentInputBinding, Routes } from '@angular/route
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { authGuard } from './core/guards/auth.guard';
+import { masterAdminGuard } from './core/guards/master-admin.guard';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 
 export const routes: Routes = [
@@ -15,6 +16,44 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
+  {
+    path: 'admin-management',
+    canActivate: [authGuard, masterAdminGuard],
+    loadComponent: () =>
+      import('./features/admin/admin-list/admin-list.component')
+        .then(m => m.AdminListComponent)
+  },
+
+  {
+    path: 'admin-management/create',
+    canActivate: [authGuard, masterAdminGuard],
+    loadComponent: () =>
+      import('./features/admin/admin-create/admin-create.component')
+        .then(m => m.AdminCreateComponent)
+  },
+
+  {
+    path: 'admin-management/view/:id',
+    canActivate: [authGuard, masterAdminGuard],
+    loadComponent: () => import('./features/admin/admin-view/admin-view.component')
+      .then(m => m.AdminViewComponent)
+  },
+
+  {
+    path: 'admin-management/edit/:id',
+    canActivate: [authGuard, masterAdminGuard],
+    loadComponent: () =>
+      import('./features/admin/admin-edit/admin-edit.component')
+        .then(m => m.AdminEditComponent)
+  },
+
+  {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/profile/profile.component').then(m => m.ProfileComponent)
+  },
+
   // {
   //   path: 'employees',
   //   canActivate: [authGuard],

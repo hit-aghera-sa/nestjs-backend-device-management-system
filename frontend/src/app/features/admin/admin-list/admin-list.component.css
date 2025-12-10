@@ -1,0 +1,102 @@
+/* src/app/features/admin/admin-list/admin-list.component.css */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Table responsive design */
+@media (max-width: 768px) {
+  table {
+    display: block;
+  }
+  
+  thead {
+    display: none;
+  }
+  
+  tbody tr {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  tbody tr:last-child {
+    border-bottom: none;
+  }
+  
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border: none;
+  }
+  
+  tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+    margin-right: 1rem;
+    flex: 0 0 120px;
+  }
+  
+  tbody td .actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* Accessibility focus styles */
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Badge styling */
+.inline-flex.items-center.px-3.py-1.rounded-full {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+/* Button hover effects */
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Loading spinner colors */
+.animate-spin circle {
+  stroke: #3b82f6;
+}

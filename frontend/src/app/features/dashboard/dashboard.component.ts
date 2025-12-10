@@ -43,7 +43,6 @@ export class DashboardComponent {
   }
 
   ngOnInit() {
-    this.initializeNavHandlers();
     this.initializeSidebarControls();
     this.loadStats();
     this.loadUserInfo();
@@ -76,23 +75,6 @@ export class DashboardComponent {
   loadUserInfo() {
     const userFromToken = this.auth.getUser();
     this.user.set(userFromToken);
-  }
-
-  // -------------------------------
-  // Navigation + Active State
-  // -------------------------------
-  initializeNavHandlers() {
-    const navLinks = document.querySelectorAll('.nav-link');
-
-    navLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        const route = link.getAttribute('data-route');
-        if (route) {
-          this.router.navigate([route]);
-          this.mobileSidebarOpen.set(false);
-        }
-      });
-    });
   }
 
   isActiveRoute(route: string) {
@@ -168,7 +150,14 @@ export class DashboardComponent {
       .toUpperCase();
   }
 
+  go(route: string) {
+    this.router.navigate([route]);
+    this.mobileSidebarOpen.set(false); // also close mobile sidebar
+  }
 
+  goToProfile() {
+    this.router.navigate(['/profile']);
+  }
   // -------------------------------
   // Logout
   // -------------------------------

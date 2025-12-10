@@ -22,8 +22,8 @@ export class EmployeesService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/employees`;
 
-  getAll() {
-    return this.http.get<{ status: string; data: Employee[] }>(this.baseUrl);
+  getAll(params?: any) {
+    return this.http.get<{ status: string; data: Employee[] }>(`${environment.apiUrl}/employees`,{ params });
   }
 
   getById(id: string) {

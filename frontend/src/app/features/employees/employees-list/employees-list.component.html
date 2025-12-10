@@ -1,23 +1,40 @@
 <div class="min-h-screen bg-gray-50 p-4 md:p-6">
 
-  <!-- Header -->
+  <!-- Header + Search -->
   <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Employees</h1>
       <p class="text-gray-600">Manage all employees registered in the system</p>
     </div>
 
-    <button
-      (click)="router.navigate(['/employees/create'])"
-      class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-      </svg>
-      Add Employee
-    </button>
+    <!-- Search + Add Employee -->
+    <div class="flex items-center gap-3">
+
+      <!-- 🔍 Search Bar -->
+      <input
+        type="text"
+        placeholder="Search employees..."
+        class="px-4 py-2 border rounded-lg w-64 bg-white shadow-sm"
+        [value]="searchText()"
+        (input)="searchText.set($event.target.value); onSearch()"
+      />
+
+      <!-- Add Employee Button -->
+      <button
+        (click)="router.navigate(['/employees/create'])"
+        class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 6v6m0 0v6m-6 0H6m6-6H6"/>
+        </svg>
+        Add Employee
+      </button>
+
+    </div>
   </div>
+
 
   <!-- Error Banner -->
   @if (errorMessage()) {

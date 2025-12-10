@@ -18,20 +18,24 @@ export class EmployeesListComponent implements OnInit {
   loading = signal(true);
   employees = signal<Employee[]>([]);
   errorMessage = signal<string | null>(null);
-
-  // ✅ REQUIRED FIX — add successMessage
   successMessage = signal<string | null>(null);
+
+  // 🔍 Search text signal
+  searchText = signal('');
 
   ngOnInit(): void {
     this.fetchEmployees();
   }
 
+  // Fetch employees with optional search query
   fetchEmployees(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
-    this.successMessage.set(null); // clear success on reload
 
-    this.employeesService.getAll().subscribe({
+    const params: any = {};
+    if (this.searchText()) params.search = this.searchText();
+
+    this.employeesService.getAll(params).subscribe({
       next: (res) => {
         this.employees.set(res.data);
         this.loading.set(false);
@@ -41,6 +45,11 @@ export class EmployeesListComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  // Triggered on typing in search bar
+  onSearch(): void {
+    this.fetchEmployees();
   }
 
   reload(): void {
@@ -55,19 +64,18 @@ export class EmployeesListComponent implements OnInit {
     this.router.navigate([`/employees/edit/${id}`]);
   }
 
-  // ✅ VERIFY — shows success banner
+  // Send verification email
   verifyEmployee(emp: Employee): void {
     if (emp.isVerified) return;
 
     this.employeesService.resendVerification(emp.email).subscribe({
       next: () => {
-        // INSTANT FEEDBACK
         this.successMessage.set(`Verification link sent to ${emp.fullName}'s email.`);
 
-        // Refresh list WITHOUT showing loader
+        // Refresh silently
         this.employeesService.getAll().subscribe({
           next: (res) => this.employees.set(res.data),
-          error: () => {} // ignore errors silently
+          error: () => {}
         });
       },
       error: (err) => {
@@ -76,15 +84,13 @@ export class EmployeesListComponent implements OnInit {
     });
   }
 
-
-  // ✅ RESEND EMAIL — shows success banner
+  // Resend verification email
   resendEmail(emp: Employee): void {
     this.employeesService.resendVerification(emp.email).subscribe({
       next: () => {
-        // INSTANT FEEDBACK
         this.successMessage.set(`Resent verification email to ${emp.fullName}.`);
 
-        // Optional background refresh
+        // Silent refresh
         this.employeesService.getAll().subscribe({
           next: (res) => this.employees.set(res.data),
           error: () => {}
@@ -96,6 +102,16 @@ export class EmployeesListComponent implements OnInit {
     });
   }
 
+  deleteEmployee(emp: Employee): void {
+    this.employeesService.delete(emp._id).subscribe({
+      next: () => {
+        this.fetchEmployees();
+      },
+      error: (err) => {
+        console.error("Delete failed:", err);
+      }
+    });
+  }
 
   getStatusBadge(status: string): string {
     return status === 'ACTIVE'
@@ -107,16 +123,5 @@ export class EmployeesListComponent implements OnInit {
     return isVerified
       ? 'bg-blue-100 text-blue-700'
       : 'bg-yellow-100 text-yellow-700';
-  }
-
-  deleteEmployee(emp: Employee) {
-    this.employeesService.delete(emp._id).subscribe({
-      next: () => {
-        this.fetchEmployees();
-      },
-      error: err => {
-        console.error("Delete failed:", err);
-      }
-    });
   }
 }

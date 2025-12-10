@@ -51,9 +51,36 @@ class EmployeeService {
   // ----------------------------
   // List employees with optional filters
   // ----------------------------
-  async listEmployees(filter: any = {}) {
-    return EmployeeRepository.findAll(filter);
+  async listEmployees(query: any = {}) {
+    const dbFilter: any = {};
+
+    // Status filter
+    if (query.status) {
+      dbFilter.status = query.status;
+    }
+
+    // Verified filter
+    if (query.isVerified === "true") {
+      dbFilter.isVerified = true;
+    } else if (query.isVerified === "false") {
+      dbFilter.isVerified = false;
+    }
+
+    // Search filter (name, email, department, designation)
+    if (query.search) {
+      const search = query.search;
+
+      dbFilter.$or = [
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { department: { $regex: search, $options: "i" } },
+        { designation: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    return EmployeeRepository.findAll(dbFilter);
   }
+
 
   // ----------------------------
   // Get employee by ID

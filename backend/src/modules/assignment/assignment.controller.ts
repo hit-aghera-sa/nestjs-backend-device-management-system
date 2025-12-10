@@ -44,6 +44,18 @@ class AssignmentController {
       next(err);
     }
   }
+  async deleteAssignment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const result = await AssignmentService.deleteAssignment(id);
+    return res
+      .status(200)
+      .json(successResponse(result, "Assignment deleted successfully"));
+  } catch (err) {
+    next(err);
+  }
+}
+
 }
 
 export default new AssignmentController();

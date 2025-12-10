@@ -1,0 +1,66 @@
+/* src/app/features/assignments/assignment-list/assignment-list.component.css */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Table responsive design */
+@media (max-width: 1024px) {
+  .overflow-x-auto {
+    border: 0;
+  }
+  
+  table {
+    min-width: 640px;
+  }
+}
+
+@media (max-width: 768px) {
+  .flex-col.md\:flex-row {
+    flex-direction: column;
+  }
+  
+  .md\:items-center {
+    align-items: flex-start;
+  }
+}
+
+/* Accessibility focus styles */
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Smooth hover transitions */
+tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Badge styling */
+.inline-flex.items-center.px-3.py-1.rounded-full {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}

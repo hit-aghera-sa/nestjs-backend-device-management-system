@@ -1,0 +1,85 @@
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Stock Overview</h1>
+    <p class="text-gray-600">Device inventory by category</p>
+  </div>
+
+  <!-- Error -->
+  @if (errorMessage()) {
+    <div class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-4">
+      {{ errorMessage() }}
+      <button (click)="reload()" class="ml-4 text-red-600 underline">Retry</button>
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="bg-white p-8 rounded-lg shadow flex justify-center">
+      <svg class="animate-spin h-10 w-10 text-blue-600" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10"
+                stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z"></path>
+      </svg>
+    </div>
+  }
+
+  <!-- Stock Table -->
+  @if (!loading() && stock().length > 0) {
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <table class="w-full text-left">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Category</th>
+            <th class="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Total</th>
+            <th class="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Available</th>
+            <th class="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Assigned</th>
+            <th class="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Damaged</th>
+            <th class="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Maintenance</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-200">
+          @for (row of stock(); track row.category) {
+            <tr>
+              <td class="px-6 py-4 font-medium text-gray-900">{{ row.category }}</td>
+              <td class="px-6 py-4">{{ row.total }}</td>
+
+              <td class="px-6 py-4">
+                <span class="text-green-600 font-semibold">{{ row.available }}</span>
+                <div class="text-xs text-gray-500">
+                  {{ getPercent(row.available, row.total) }}%
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <span class="text-blue-600 font-semibold">{{ row.assigned }}</span>
+                <div class="text-xs text-gray-500">
+                  {{ getPercent(row.assigned, row.total) }}%
+                </div>
+              </td>
+
+              <td class="px-6 py-4 text-red-600">
+                {{ row.damaged }}
+              </td>
+
+              <td class="px-6 py-4 text-yellow-600">
+                {{ row.maintenance }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Empty -->
+  @if (!loading() && stock().length === 0 && !errorMessage()) {
+    <div class="bg-white p-12 rounded-lg shadow text-center">
+      <h3 class="text-lg font-medium">No stock data available</h3>
+      <p class="text-gray-600">Add devices to the system to see stock stats.</p>
+    </div>
+  }
+</div>

@@ -124,10 +124,6 @@ class AssignmentService {
     return updatedAssignment;
   }
 
-
-  // ----------------------------
-  // Get assignment details by ID
-  // ----------------------------
   async getAssignmentById(id: string) {
     const assignment = await AssignmentRepository.findById(id);
     if (!assignment) throw new AppError("Assignment not found", 404);
@@ -146,6 +142,28 @@ class AssignmentService {
 
     return AssignmentRepository.listAssignments(dbFilter);
   }
+
+  async deleteAssignment(id: string) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid assignment ID", 400);
+  }
+
+  const assignment = await AssignmentRepository.findById(id);
+  if (!assignment) {
+    throw new AppError("Assignment not found", 404);
+  }
+
+  // When deleting assignment → Make device AVAILABLE again
+  await DeviceRepository.update(
+    assignment.device.toString(),
+    { status: "AVAILABLE" }
+  );
+
+  await AssignmentRepository.delete(id);
+
+  return { deleted: true };
+}
+
 }
 
 export default new AssignmentService();

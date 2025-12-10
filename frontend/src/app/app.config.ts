@@ -54,11 +54,43 @@ export const routes: Routes = [
       import('./features/profile/profile.component').then(m => m.ProfileComponent)
   },
 
-  // {
-  //   path: 'employees',
-  //   canActivate: [authGuard],
-  //   loadComponent: () => import('./features/employees/employees.component').then(m => m.EmployeesComponent)
-  // },
+  {
+    path: 'employees',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/employees/employees-list/employees-list.component')
+        .then(m => m.EmployeesListComponent)
+  },
+  {
+    path: 'employees/create',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/employees/employees-create/employees-create.component')
+        .then(m => m.EmployeesCreateComponent)
+  },
+
+  {
+    path: 'verify-employee',
+    loadComponent: () =>
+      import('./features/employees/verify-employee/verify-employee.component')
+        .then(m => m.VerifyEmployeeComponent)
+  },
+
+  {
+    path: 'employees/view/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/employees/employees-view/employees-view.component')
+        .then(m => m.EmployeesViewComponent)
+  },
+  {
+    path: 'employees/edit/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/employees/employees-edit/employees-edit.component')
+        .then(m => m.EmployeesEditComponent)
+  },
+
   // {
   //   path: 'devices',
   //   canActivate: [authGuard],

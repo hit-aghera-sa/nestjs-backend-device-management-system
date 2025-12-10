@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out-tsc/
+tmp/
+coverage/
+
+# Angular generated code (very important)
+**/*.ngtypecheck.ts
+**/*.ngfactory.ts
+**/*.ngstyle.ts
+
+# Environment files (optional)
+src/environments/*.ts
+
+# Config files
+*.config.js
+*.config.ts
+
+# VSCode settings folder (optional)
+.vscode/
+
+# Auto-generated module files (optional)
+**/generated/
+
+# Ignore tailwind build cache (if any)
+.tailwind/

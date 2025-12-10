@@ -1,0 +1,173 @@
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+
+  <!-- Header -->
+  <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Employees</h1>
+      <p class="text-gray-600">Manage all employees registered in the system</p>
+    </div>
+
+    <button
+      (click)="router.navigate(['/employees/create'])"
+      class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+      </svg>
+      Add Employee
+    </button>
+  </div>
+
+  <!-- Error Banner -->
+  @if (errorMessage()) {
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+      <div class="flex items-center justify-between">
+        <p class="text-red-800">{{ errorMessage() }}</p>
+        <button (click)="reload()" class="text-red-700 hover:text-red-900 text-sm font-medium">
+          Retry
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="bg-white rounded-xl shadow p-12 flex items-center justify-center">
+      <svg class="animate-spin h-10 w-10 text-blue-600" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10"
+                stroke="currentColor" stroke-width="4" fill="none"></circle>
+        <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.3 0 0 5.3 0 12h4z"/>
+      </svg>
+      <p class="ml-3 text-gray-600">Loading employees...</p>
+    </div>
+  }
+
+  <!-- Employees Table -->
+  @if (!loading() && employees().length > 0) {
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
+                Employee
+              </th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
+                Department
+              </th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
+                Designation
+              </th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
+                Status
+              </th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
+                Verified
+              </th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
+                Actions
+              </th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-gray-200">
+            @for (emp of employees(); track emp._id) {
+              <tr class="hover:bg-gray-50 transition-colors">
+
+                <!-- Name + Email -->
+                <td class="py-4 px-6">
+                  <p class="font-medium text-gray-900">{{ emp.fullName }}</p>
+                  <p class="text-sm text-gray-500">{{ emp.email }}</p>
+                </td>
+
+                <!-- Department -->
+                <td class="py-4 px-6">
+                  <span class="text-gray-700 text-sm">{{ emp.department }}</span>
+                </td>
+
+                <!-- Designation -->
+                <td class="py-4 px-6">
+                  <span class="text-gray-700 text-sm">
+                    {{ emp.designation || '—' }}
+                  </span>
+                </td>
+
+                <!-- Status -->
+                <td class="py-4 px-6">
+                  <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getStatusBadge(emp.status)">
+                    {{ emp.status }}
+                  </span>
+                </td>
+
+                <!-- Verified -->
+                <td class="py-4 px-6">
+                  <span [class]="'px-3 py-1 rounded-full text-xs font-medium ' + getVerifyBadge(emp.isVerified)">
+                    {{ emp.isVerified ? 'Verified' : 'Pending' }}
+                  </span>
+                </td>
+
+                <!-- ACTIONS -->
+                <td class="px-6 py-4 whitespace-nowrap">
+
+                  <!-- View -->
+                  <button class="px-3 py-1 text-sm rounded bg-gray-100 hover:bg-gray-200"
+                          (click)="viewEmployee(emp._id)">
+                    View
+                  </button>
+
+                  <!-- Edit -->
+                  <button class="px-3 py-1 text-sm rounded bg-blue-100 hover:bg-blue-200 ml-2"
+                          (click)="editEmployee(emp._id)">
+                    Edit
+                  </button>
+
+                  <!-- Verify -->
+                  <button *ngIf="!emp.isVerified"
+                          class="px-3 py-1 text-sm rounded bg-yellow-100 text-yellow-700 hover:bg-yellow-200 ml-2"
+                          (click)="verifyEmployee(emp)">
+                    Verify
+                  </button>
+
+                  <!-- Resend Verification -->
+                  <button *ngIf="!emp.isVerified"
+                          class="px-3 py-1 text-sm rounded bg-purple-100 text-purple-700 hover:bg-purple-200 ml-2"
+                          (click)="resendEmail(emp)">
+                    Resend Email
+                  </button>
+
+                  <!-- Delete -->
+                  <button
+                    (click)="deleteEmployee(emp)"
+                    class="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md ml-2">
+                    Delete
+                  </button>
+
+                </td>
+
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && employees().length === 0 && !errorMessage()) {
+    <div class="bg-white rounded-xl shadow p-12 text-center">
+      <p class="text-lg font-medium text-gray-900 mb-2">No employees found</p>
+      <p class="text-gray-600 mb-6">Start by adding a new employee.</p>
+
+      <button
+        (click)="router.navigate(['/employees/create'])"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      >
+        Add Employee
+      </button>
+    </div>
+  }
+
+</div>

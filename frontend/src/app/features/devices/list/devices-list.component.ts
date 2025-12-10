@@ -1,5 +1,3 @@
-// src/app/features/devices/list/devices-list.component.ts
-
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -33,13 +31,11 @@ export class DevicesListComponent implements OnInit {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   devices = signal<Device[]>([]);
-  searchText = signal('');
+  searchText = signal("");
 
   ngOnInit(): void {
     this.fetchDevices();
   }
-
-  
 
   fetchDevices(): void {
     this.loading.set(true);
@@ -47,7 +43,6 @@ export class DevicesListComponent implements OnInit {
     const params: any = {};
     if (this.searchText()) params.search = this.searchText();
 
-    // ✅ FIXED: Correct backend URL “devices”
     this.http
       .get<{ status: string; data: Device[] }>(`${environment.apiUrl}/devices`, { params })
       .subscribe({
@@ -63,7 +58,7 @@ export class DevicesListComponent implements OnInit {
   }
 
   onSearch(): void {
-    this.fetchDevices();
+    this.fetchDevices();  
   }
 
   viewDevice(id: string): void {
@@ -74,20 +69,18 @@ export class DevicesListComponent implements OnInit {
     this.router.navigate([`/devices/edit/${id}`]);
   }
 
-    deleteDevice(device: Device): void {
+  deleteDevice(device: Device): void {
     this.http
-        .delete(`${environment.apiUrl}/devices/${device._id}`)
-        .subscribe({
+      .delete(`${environment.apiUrl}/devices/${device._id}`)
+      .subscribe({
         next: () => {
-            // Remove item instantly from UI
-            this.devices.set(this.devices().filter(d => d._id !== device._id));
+          this.devices.set(this.devices().filter(d => d._id !== device._id));
         },
         error: (err) => {
-            alert(err?.error?.message || 'Failed to delete device.');
+          alert(err?.error?.message || 'Failed to delete device.');
         }
-        });
-    }
-
+      });
+  }
 
   getStatusBadgeClass(status: Device['status']): string {
     return {

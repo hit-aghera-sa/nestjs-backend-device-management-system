@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { EmployeesService, Employee } from '../employees.service';
+import { EmployeesService, Employee } from '../../../core/services/employees.service';
 
 @Component({
   selector: 'app-employees-create',

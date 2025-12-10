@@ -90,12 +90,13 @@ export const routes: Routes = [
       import('./features/employees/employees-edit/employees-edit.component')
         .then(m => m.EmployeesEditComponent)
   },
+  {
+    path: 'devices',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/devices/devices.routes').then(m => m.DEVICES_ROUTES)
+  },
 
-  // {
-  //   path: 'devices',
-  //   canActivate: [authGuard],
-  //   loadComponent: () => import('./features/devices/devices.component').then(m => m.DevicesComponent)
-  // },
   // {
   //   path: 'assignments',
   //   canActivate: [authGuard],

@@ -84,3 +84,17 @@
     margin: 0;
   }
 }
+/* Dashboard Tiles */
+.dashboard-tile {
+  @apply bg-white border border-gray-200 rounded-xl p-6 shadow-sm 
+         hover:shadow-md hover:bg-gray-50 transition cursor-pointer
+         flex flex-col items-start gap-3 text-left;
+}
+
+.dashboard-tile h3 {
+  @apply text-lg font-semibold text-gray-800;
+}
+
+.dashboard-tile p {
+  @apply text-sm text-gray-600;
+}

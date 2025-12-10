@@ -108,8 +108,8 @@ class AdminController {
 
   async deactivateAdmin(req: Request, res: Response, next: NextFunction) {
     try {
-      await AdminService.deactivateAdmin(req.params.id);
-      return res.status(200).json(successResponse(null, "Admin deactivated"));
+      const updatedAdmin = await AdminService.deactivateAdmin(req.params.id);
+      return res.status(200).json(successResponse(updatedAdmin, "Admin deactivated"));
     } catch (err) {
       next(err);
     }
@@ -117,12 +117,13 @@ class AdminController {
 
   async activateAdmin(req: Request, res: Response, next: NextFunction) {
     try {
-      await AdminService.activateAdmin(req.params.id);
-      return res.status(200).json(successResponse(null, "Admin activated"));
+      const updatedAdmin = await AdminService.activateAdmin(req.params.id);
+      return res.status(200).json(successResponse(updatedAdmin, "Admin activated"));
     } catch (err) {
       next(err);
     }
   }
+
 }
 
 export default new AdminController();

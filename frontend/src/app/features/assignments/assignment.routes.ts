@@ -7,16 +7,17 @@ export const ASSIGNMENT_ROUTES: Routes = [
       import('./assignment-list/assignment-list.component')
         .then(m => m.AssignmentListComponent)
   },
-{
+  {
     path: 'create',
     loadComponent: () =>
       import('./assignment-create/assignment-create.component')
         .then(m => m.AssignmentCreateComponent)
   },
-//   {
-//     path: ':id',
-//     loadComponent: () =>
-//       import('./assignment-view/assignment-view.component')
-//         .then(m => m.AssignmentViewComponent)
-//   }
+  {
+    path: 'return/:id',
+    loadComponent: () =>
+      import('./assignment-return/assignment-return.component')
+        .then(m => m.AssignmentReturnComponent)
+  }
+
 ];

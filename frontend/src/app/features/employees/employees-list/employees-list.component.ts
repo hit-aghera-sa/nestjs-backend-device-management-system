@@ -19,6 +19,9 @@ export class EmployeesListComponent implements OnInit {
   employees = signal<Employee[]>([]);
   errorMessage = signal<string | null>(null);
 
+  // ✅ REQUIRED FIX — add successMessage
+  successMessage = signal<string | null>(null);
+
   ngOnInit(): void {
     this.fetchEmployees();
   }
@@ -26,6 +29,7 @@ export class EmployeesListComponent implements OnInit {
   fetchEmployees(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.successMessage.set(null); // clear success on reload
 
     this.employeesService.getAll().subscribe({
       next: (res) => {
@@ -45,40 +49,53 @@ export class EmployeesListComponent implements OnInit {
 
   viewEmployee(id: string): void {
     this.router.navigate(['/employees/view', id]);
-    console.log("object");
   }
 
   editEmployee(id: string): void {
     this.router.navigate([`/employees/edit/${id}`]);
   }
 
+  // ✅ VERIFY — shows success banner
   verifyEmployee(emp: Employee): void {
     if (emp.isVerified) return;
 
-    if (!confirm(`Send verification email to ${emp.fullName}?`)) return;
-
     this.employeesService.resendVerification(emp.email).subscribe({
       next: () => {
-        alert('Verification email sent successfully!');
+        // INSTANT FEEDBACK
+        this.successMessage.set(`Verification link sent to ${emp.fullName}'s email.`);
+
+        // Refresh list WITHOUT showing loader
+        this.employeesService.getAll().subscribe({
+          next: (res) => this.employees.set(res.data),
+          error: () => {} // ignore errors silently
+        });
       },
       error: (err) => {
-        alert(err?.error?.message || 'Failed to send verification email.');
+        this.errorMessage.set(err?.error?.message || 'Failed to send verification email.');
       }
     });
   }
 
-  resendEmail(emp: Employee) {
-    if (!confirm(`Resend verification email to ${emp.fullName}?`)) return;
 
+  // ✅ RESEND EMAIL — shows success banner
+  resendEmail(emp: Employee): void {
     this.employeesService.resendVerification(emp.email).subscribe({
       next: () => {
-        alert("Verification email sent successfully!");
+        // INSTANT FEEDBACK
+        this.successMessage.set(`Resent verification email to ${emp.fullName}.`);
+
+        // Optional background refresh
+        this.employeesService.getAll().subscribe({
+          next: (res) => this.employees.set(res.data),
+          error: () => {}
+        });
       },
       error: (err) => {
-        alert(err?.error?.message || "Failed to send verification email.");
+        this.errorMessage.set(err?.error?.message || 'Failed to resend verification email.');
       }
     });
   }
+
 
   getStatusBadge(status: string): string {
     return status === 'ACTIVE'
@@ -92,28 +109,14 @@ export class EmployeesListComponent implements OnInit {
       : 'bg-yellow-100 text-yellow-700';
   }
 
-  resend(email: string) {
-    if (!confirm(`Resend verification email to ${email}?`)) return;
-
-    this.employeesService.resendVerification(email).subscribe({
-      next: () => {
-        alert("Verification email resent successfully!");
-      },
-      error: (err) => {
-        alert(err?.error?.message || "Failed to resend verification email.");
-      }
-    });
-  }
-
   deleteEmployee(emp: Employee) {
     this.employeesService.delete(emp._id).subscribe({
       next: () => {
-        this.fetchEmployees(); 
+        this.fetchEmployees();
       },
       error: err => {
         console.error("Delete failed:", err);
       }
     });
   }
-
 }

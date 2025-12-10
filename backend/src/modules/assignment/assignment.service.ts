@@ -53,40 +53,6 @@ class AssignmentService {
     return assignment;
   }
 
-  // ----------------------------
-  // Return a device from assignment
-  // ----------------------------
-
-//   async returnDevice(assignmentId: string, notes?: string) {
-//   if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
-//     throw new AppError("Invalid assignment ID", 400);
-//   }
-
-//   const assignment = await AssignmentRepository.findById(assignmentId);
-//   if (!assignment) throw new AppError("Assignment not found", 404);
-
-//   if (assignment.status !== "ASSIGNED") {
-//     throw new AppError("This assignment is already returned", 400);
-//   }
-
-//   console.log("first DEBUG assignment.device =", assignment.device);
-
-//   const updatedAssignment = await AssignmentRepository.markReturned(
-//     assignmentId,
-//     notes
-//   );
-
-//   const deviceId =
-//     assignment.device instanceof mongoose.Types.ObjectId
-//       ? assignment.device.toString()
-//       : assignment.device._id.toString();
-
-//   await DeviceRepository.update(deviceId, { status: "AVAILABLE" });
-
-//   console.log("second DEBUG deviceId =", deviceId);
-
-//   return updatedAssignment;
-// }
   async returnDevice(assignmentId: string, notes: string, deviceStatus: string) {
     if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
       throw new AppError("Invalid assignment ID", 400);

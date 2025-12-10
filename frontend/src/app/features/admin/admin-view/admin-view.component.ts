@@ -39,12 +39,27 @@ export class AdminViewComponent implements OnInit {
     }
   }
 
+  // Helper: Map backend object to frontend Admin interface
+  private mapAdmin(data: any): Admin {
+    return {
+      id: data.id || data._id,
+      fullName: data.fullName,
+      email: data.email,
+      role: data.role,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      lastLogin: data.lastLogin,
+      status: data.isActive ? 'ACTIVE' : 'INACTIVE'  // <-- IMPORTANT FIX
+    };
+  }
+
   fetchAdmin(id: string): void {
     this.loading.set(true);
-    this.http.get<{ status: string; data: Admin }>(`${environment.apiUrl}/auth/admins/${id}`)
+    this.http.get<{ status: string; data: any }>(`${environment.apiUrl}/auth/admins/${id}`)
       .subscribe({
         next: (res) => {
-          this.admin.set(res.data);
+          const mapped = this.mapAdmin(res.data);
+          this.admin.set(mapped);
           this.loading.set(false);
         },
         error: (err) => {
@@ -68,23 +83,29 @@ export class AdminViewComponent implements OnInit {
     const a = this.admin();
     if (!a) return;
 
-    const confirmMsg = a.status === 'ACTIVE'
-      ? `Deactivate ${a.fullName}?`
-      : `Activate ${a.fullName}?`;
-
-    if (!confirm(confirmMsg)) return;
+    if (a.role === 'MASTER') {
+      this.errorMessage.set("Cannot change status of MASTER admin.");
+      return;
+    }
 
     const endpoint = a.status === 'ACTIVE'
       ? `${environment.apiUrl}/auth/admins/${a.id}/deactivate`
       : `${environment.apiUrl}/auth/admins/${a.id}/activate`;
 
-    this.http.patch<{ status: string; data: Admin }>(endpoint, {})
+    this.http.patch<{ status: string; data: any }>(endpoint, {})
       .subscribe({
         next: (res) => {
-          this.admin.set(res.data);
+          // Backend may return null → refetch admin
+          if (!res.data) {
+            this.fetchAdmin(a.id);
+            return;
+          }
+
+          const mapped = this.mapAdmin(res.data);
+          this.admin.set(mapped);
         },
         error: (err) => {
-          alert(err?.error?.message || 'Failed to update status.');
+          this.errorMessage.set(err?.error?.message || 'Failed to update status.');
         }
       });
   }
@@ -95,5 +116,4 @@ export class AdminViewComponent implements OnInit {
       ? 'bg-purple-100 text-purple-800'
       : 'bg-blue-100 text-blue-800';
   }
-
 }

@@ -31,6 +31,13 @@
     </div>
   }
 
+  <!-- ✅ Success Banner (NEW) -->
+  @if (successMessage()) {
+    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+      <p class="text-green-800">{{ successMessage() }}</p>
+    </div>
+  }
+
   <!-- Loading -->
   @if (loading()) {
     <div class="bg-white rounded-xl shadow p-12 flex items-center justify-center">
@@ -52,24 +59,12 @@
         <table class="w-full">
           <thead class="bg-gray-50">
             <tr>
-              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
-                Employee
-              </th>
-              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
-                Department
-              </th>
-              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
-                Designation
-              </th>
-              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
-                Status
-              </th>
-              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
-                Verified
-              </th>
-              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Designation</th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Verified</th>
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
 
@@ -90,9 +85,7 @@
 
                 <!-- Designation -->
                 <td class="py-4 px-6">
-                  <span class="text-gray-700 text-sm">
-                    {{ emp.designation || '—' }}
-                  </span>
+                  <span class="text-gray-700 text-sm">{{ emp.designation || '—' }}</span>
                 </td>
 
                 <!-- Status -->

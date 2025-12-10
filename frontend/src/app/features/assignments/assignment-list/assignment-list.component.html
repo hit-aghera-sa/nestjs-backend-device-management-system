@@ -50,15 +50,6 @@
     </div>
   }
 
-  <!-- Debug Summary -->
-  <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400">
-    <p class="text-sm text-blue-700">
-      Assignments: {{ assignments()?.length || 0 }} | 
-      Loading: {{ loading() ? 'Yes' : 'No' }} | 
-      Error: {{ errorMessage() || 'None' }}
-    </p>
-  </div>
-
   <!-- Table -->
   @if (!loading() && assignments()) {
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -137,13 +128,14 @@
 
                     <!-- EDIT -->
                     <button
-                      
-                      class="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md transition">
+                      class="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md transition"
+                      (click)="router.navigate(['/assignments/return', assignment.id])"
+>
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M15.232 5.232l3.536 3.536M9 11l6.232-6.232a2 2 0 112.828 2.828L11.828 13.828a2 2 0 01-1.414.586H7v-3.414a2 2 0 01.586-1.414z"/>
                       </svg>
-                      Edit
+                      Return
                     </button>
 
                     <!-- DELETE -->

@@ -28,7 +28,8 @@ export class AssignmentCreateComponent implements OnInit {
   assignmentForm: FormGroup = this.fb.group({
     employee: ['', Validators.required],
     device: ['', Validators.required],
-    notes: ['']
+    notes: [''],
+    expectedReturnDate: ['']
   });
 
   ngOnInit(): void {
@@ -73,7 +74,8 @@ export class AssignmentCreateComponent implements OnInit {
     const payload = {
     employeeId: this.assignmentForm.value.employee,
     deviceId: this.assignmentForm.value.device,
-    notes: this.assignmentForm.value.notes
+    notes: this.assignmentForm.value.notes,
+    expectedReturnDate: this.assignmentForm.value.expectedReturnDate || null
     };
 
     this.http.post(`${environment.apiUrl}/assignments`, payload)

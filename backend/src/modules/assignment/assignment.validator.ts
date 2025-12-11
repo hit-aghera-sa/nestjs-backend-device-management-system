@@ -4,6 +4,7 @@ export const assignDeviceSchema = Joi.object({
   employeeId: Joi.string().required(),
   deviceId: Joi.string().required(),
   notes: Joi.string().allow(null, ""),
+  expectedReturnDate: Joi.date().allow(null)
 });
 
 export const returnDeviceSchema = Joi.object({

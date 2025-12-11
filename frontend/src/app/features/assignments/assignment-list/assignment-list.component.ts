@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { FormsModule } from '@angular/forms';
 
 interface Assignment {
   id: string;
@@ -19,6 +20,7 @@ interface Assignment {
     serialNumber: string;
   };
   assignedAt: string | null;
+  expectedReturnDate?: string | null;   // ✔ Added
   returnedAt?: string | null;
   status: 'ASSIGNED' | 'RETURNED' | string;
   notes?: string;
@@ -27,7 +29,7 @@ interface Assignment {
 @Component({
   selector: 'app-assignment-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './assignment-list.component.html',
   styleUrls: ['./assignment-list.component.css']
 })
@@ -35,9 +37,22 @@ export class AssignmentListComponent implements OnInit {
   private http = inject(HttpClient);
   public router = inject(Router);
 
+  page = 1;
+  limit = 10;
+  total = 0;
+
   loading = signal(true);
   assignments = signal<Assignment[]>([]);
   errorMessage = signal<string | null>(null);
+  filters = {
+    status: '',
+    employee: '',
+    category: '',
+    startDate: '',
+    endDate: '',
+    search: ''
+  };
+
 
   ngOnInit(): void {
     this.fetchAssignments();
@@ -47,51 +62,63 @@ export class AssignmentListComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.http.get<{ status: string; data: any[] }>(`${environment.apiUrl}/assignments`)
-      .subscribe({
-next: (response) => {
-  console.log('API Response:', response);
+    const params: any = {
+      page: this.page,
+      limit: this.limit
+    };
 
-  if (response && Array.isArray(response.data)) {
-    const mappedAssignments = response.data.map((a: any) => ({
-      id: a._id,
-      employee: {
-        id: a.employee?._id,
-        fullName: a.employee?.fullName,
-        department: a.employee?.department
+    // Apply Filters
+    if (this.filters.status) params.status = this.filters.status;
+    if (this.filters.employee) params.employee = this.filters.employee;
+    if (this.filters.category) params.deviceCategory = this.filters.category;
+    if (this.filters.startDate) params.startDate = this.filters.startDate;
+    if (this.filters.endDate) params.endDate = this.filters.endDate;
+    if (this.filters.search) params.search = this.filters.search;
+
+    this.http.get<{ status: string; data: any[]; total: number; page: number; limit: number }>(
+      `${environment.apiUrl}/assignments`,
+      { params }
+    ).subscribe({
+      next: (response) => {
+
+        // Save pagination info returned by backend
+        this.total = response.total;
+        this.page = response.page;
+        this.limit = response.limit;
+
+        const mappedAssignments = response.data.map((a: any) => ({
+          id: a._id,
+          employee: {
+            id: a.employee?._id,
+            fullName: a.employee?.fullName,
+            department: a.employee?.department
+          },
+          device: {
+            id: a.device?._id,
+            deviceName: a.device?.deviceName,
+            model: a.device?.modelNumber,
+            serialNumber: a.device?.serialNumber
+          },
+          assignedAt: a.assignedAt,
+          expectedReturnDate: a.expectedReturnDate,
+          returnedAt: a.returnedAt,
+          status: a.status,
+          notes: a.notes
+        }));
+
+        this.assignments.set(mappedAssignments);
+        this.loading.set(false);
       },
-      device: {
-        id: a.device?._id,
-        deviceName: a.device?.deviceName,
-        model: a.device?.modelNumber,   // backend = modelNumber
-        serialNumber: a.device?.serialNumber
-      },
-      assignedAt: a.assignedAt,
-      returnedAt: a.returnedAt,
-      status: a.status,
-      notes: a.notes
-    }));
-
-    console.log("Mapped Assignments:", mappedAssignments);
-
-    this.assignments.set(mappedAssignments);
-  } else {
-    this.errorMessage.set("Invalid response format from server");
-    this.assignments.set([]);
+      error: () => {
+        this.errorMessage.set("Failed to load assignments");
+        this.assignments.set([]);
+        this.loading.set(false);
+      }
+    });
   }
 
-  this.loading.set(false);
-},
-        error: (error) => {
-          console.error('Error fetching assignments:', error);
-          this.errorMessage.set(
-            error?.error?.message ||
-            'Failed to load assignments. Please check your connection and try again.'
-          );
-          this.assignments.set([]);
-          this.loading.set(false);
-        }
-      });
+  applyFilters() {
+    this.fetchAssignments();
   }
 
   reload(): void {
@@ -126,19 +153,36 @@ next: (response) => {
     this.loading.set(true);
 
     this.http.delete(`${environment.apiUrl}/assignments/${id}`)
-        .subscribe({
+      .subscribe({
         next: () => {
-            // remove deleted row from UI without reload
-            const updated = this.assignments().filter(a => a.id !== id);
-            this.assignments.set(updated);
-            this.loading.set(false);
+          const updated = this.assignments().filter(a => a.id !== id);
+          this.assignments.set(updated);
+          this.loading.set(false);
         },
         error: (error) => {
-            console.error("Delete failed:", error);
-            this.errorMessage.set(error?.error?.message || "Failed to delete assignment.");
-            this.loading.set(false);
+          console.error("Delete failed:", error);
+          this.errorMessage.set(error?.error?.message || "Failed to delete assignment.");
+          this.loading.set(false);
         }
-        });
+      });
+  }
+
+  totalPages() {
+    return Math.ceil(this.total / this.limit);
+  }
+
+  nextPage() {
+    if (this.page < this.totalPages()) {
+      this.page++;
+      this.fetchAssignments();
     }
+  }
+
+  prevPage() {
+    if (this.page > 1) {
+      this.page--;
+      this.fetchAssignments();
+    }
+  }
 
 }

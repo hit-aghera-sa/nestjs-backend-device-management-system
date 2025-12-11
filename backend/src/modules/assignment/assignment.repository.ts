@@ -26,12 +26,12 @@ class AssignmentRepository {
       .exec();
   }
 
-  async listAssignments(filter: any = {}) {
-    return AssignmentModel.find(filter)
-      .populate("employee")
-      .populate("device")
-      .exec();
-  }
+  listAssignments(filter: any = {}) {
+  return AssignmentModel.find(filter)
+    .populate("employee")
+    .populate("device");
+}
+
 
   async markReturned(id: string, notes?: string) {
     return AssignmentModel.findByIdAndUpdate(
@@ -42,11 +42,13 @@ class AssignmentRepository {
       .populate("employee")
       .populate("device")
       .exec();
+    }
+    async delete(id: string) {
+    return AssignmentModel.findByIdAndDelete(id).exec();
   }
-  async delete(id: string) {
-  return AssignmentModel.findByIdAndDelete(id).exec();
-}
-
+  count(filter: any = {}) {
+    return AssignmentModel.countDocuments(filter);
+  }
 }
 
 export default new AssignmentRepository();

@@ -11,6 +11,7 @@ export interface IDevice extends Document {
   purchaseDate?: Date | null;
   warrantyExpiry?: Date | null;
   purchasePrice?: number | null;
+  expectedReturnDate?: Date | null;
   status: DeviceStatus;
   specifications?: string | null;
   createdAt: Date;
@@ -27,6 +28,7 @@ const DeviceSchema = new Schema<IDevice>(
     purchaseDate: { type: Date, default: null },
     warrantyExpiry: { type: Date, default: null },
     purchasePrice: { type: Number, default: null },
+    expectedReturnDate: { type: Date, default: null },
     status: {
       type: String,
       enum: ["AVAILABLE", "ASSIGNED", "DAMAGED", "MAINTENANCE"],

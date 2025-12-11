@@ -5,9 +5,7 @@ import { logger } from "../../core/logger/logger";
 import AssignmentRepository from "../assignment/assignment.repository";
 
 class DeviceService {
-  // ----------------------------
-  // Create Device
-  // ----------------------------
+
   async createDevice(data: Partial<IDevice>) {
     const exists = await DeviceRepository.findBySerial(data.serialNumber!);
     if (exists) throw new AppError("Device with this serial number already exists", 400);
@@ -22,16 +20,13 @@ class DeviceService {
       warrantyExpiry: data.warrantyExpiry || null,
       purchasePrice: data.purchasePrice || null,
       specifications: data.specifications || null,
+      expectedReturnDate: data.expectedReturnDate || null,
       status: data.status || "AVAILABLE",
     });
 
     return device;
   }
 
-  // ----------------------------
-  // List Devices
-  // Supports filter by category/status/search
-  // ----------------------------
   async listDevices(filter: any = {}) {
     const dbFilter: any = {};
 
@@ -54,29 +49,19 @@ class DeviceService {
     return DeviceRepository.findAll(dbFilter);
   }
 
-  // ----------------------------
-  // Get Device by ID
-  // ----------------------------
   async getDeviceById(id: string) {
     const device = await DeviceRepository.findById(id);
     if (!device) throw new AppError("Device not found", 404);
     return device;
   }
 
-  // ----------------------------
-  // Update Device
-  // Prevent certain status updates until assignment module is done
-  // ----------------------------
   async updateDevice(id: string, data: Partial<IDevice>) {
     const device = await DeviceRepository.update(id, data);
     if (!device) throw new AppError("Device not found", 404);
     return device;
   }
 
-  // ----------------------------
-  // Delete Device
-  // Prevent deletion if device is assigned to an employee
-  // ----------------------------
+
   async deleteDevice(id: string) {
     const device = await DeviceRepository.findById(id);
     if (!device) throw new AppError("Device not found", 404);
@@ -89,11 +74,6 @@ class DeviceService {
     return await DeviceRepository.delete(id);
   }
 
-  // ----------------------------
-  // Update Device Status
-  // Only allows updating to AVAILABLE, DAMAGED, or MAINTENANCE
-  // ASSIGNED status is managed through the assignment system
-  // ----------------------------
   async updateStatus(id: string, status: DeviceStatus) {
     const device = await DeviceRepository.findById(id);
     if (!device) throw new AppError("Device not found", 404);

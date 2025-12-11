@@ -16,12 +16,13 @@ class DeviceController {
 
   async getDevices(req: Request, res: Response, next: NextFunction) {
     try {
-      const devices = await DeviceService.listDevices(req.query);
-      return res.status(200).json(successResponse(devices));
+      const list = await DeviceService.listDevices(req.query);
+      return res.status(200).json(successResponse(list));
     } catch (err) {
       next(err);
     }
   }
+
 
   async getDeviceById(req: Request, res: Response, next: NextFunction) {
     try {

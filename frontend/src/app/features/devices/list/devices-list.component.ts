@@ -1,8 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { DeviceService } from '../../../core/services/device.service';
 
 export interface Device {
   _id: string;
@@ -25,8 +24,14 @@ export interface Device {
   styleUrls: ['./devices-list.component.css']
 })
 export class DevicesListComponent implements OnInit {
-  private http = inject(HttpClient);
-  protected router = inject(Router);
+
+  private deviceService = inject(DeviceService);   // ✅ FIXED
+  public router = inject(Router);
+
+  // -------- Pagination --------
+  page = signal(1);
+  limit = 5;
+  totalPages = signal(1);
 
   loading = signal(true);
   errorMessage = signal<string | null>(null);
@@ -40,25 +45,29 @@ export class DevicesListComponent implements OnInit {
   fetchDevices(): void {
     this.loading.set(true);
 
-    const params: any = {};
+    const params: any = {
+      page: this.page(),
+      limit: this.limit
+    };
+
     if (this.searchText()) params.search = this.searchText();
 
-    this.http
-      .get<{ status: string; data: Device[] }>(`${environment.apiUrl}/devices`, { params })
-      .subscribe({
-        next: (res) => {
-          this.devices.set(res.data);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.errorMessage.set(err?.error?.message || 'Failed to load devices');
-          this.loading.set(false);
-        }
-      });
+    this.deviceService.getDevices(params).subscribe({
+      next: (res: { status: string; data: any }) => {   // ✅ typed
+        this.devices.set(res.data.devices);
+        this.totalPages.set(res.data.pagination.totalPages);
+        this.loading.set(false);
+      },
+      error: (err: any) => {   // ✅ typed
+        this.errorMessage.set(err?.error?.message || 'Failed to load devices');
+        this.loading.set(false);
+      }
+    });
   }
 
   onSearch(): void {
-    this.fetchDevices();  
+    this.page.set(1);
+    this.fetchDevices();
   }
 
   viewDevice(id: string): void {
@@ -70,16 +79,11 @@ export class DevicesListComponent implements OnInit {
   }
 
   deleteDevice(device: Device): void {
-    this.http
-      .delete(`${environment.apiUrl}/devices/${device._id}`)
-      .subscribe({
-        next: () => {
-          this.devices.set(this.devices().filter(d => d._id !== device._id));
-        },
-        error: (err) => {
-          alert(err?.error?.message || 'Failed to delete device.');
-        }
-      });
+    this.deviceService.deleteDevice(device._id).subscribe({
+      next: () => this.fetchDevices(),
+      error: (err: any) =>
+        alert(err?.error?.message || 'Failed to delete device.')
+    });
   }
 
   getStatusBadgeClass(status: Device['status']): string {
@@ -89,5 +93,18 @@ export class DevicesListComponent implements OnInit {
       DAMAGED: 'bg-red-100 text-red-800',
       MAINTENANCE: 'bg-yellow-100 text-yellow-800'
     }[status];
+  }
+   nextPage() {
+    if (this.page() < this.totalPages()) {
+      this.page.update(v => v + 1);
+      this.fetchDevices();
+    }
+  }
+
+  prevPage() {
+    if (this.page() > 1) {
+      this.page.update(v => v - 1);
+      this.fetchDevices();
+    }
   }
 }

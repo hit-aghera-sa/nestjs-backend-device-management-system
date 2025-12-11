@@ -26,8 +26,8 @@ class EmployeeController {
 
   async getEmployees(req: Request, res: Response, next: NextFunction) {
     try {
-      const list = await EmployeeService.listEmployees(req.query);
-      return res.status(200).json(successResponse(list));
+      const result = await EmployeeService.listEmployees(req.query);
+      return res.status(200).json(successResponse(result));
     } catch (err) {
       next(err);
     }

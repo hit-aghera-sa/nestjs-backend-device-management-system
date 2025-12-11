@@ -1,7 +1,7 @@
 import DeviceModel from "../device/device.model";
 
 class StockService {
-  private LOW_STOCK_THRESHOLD = 3;
+  private LOW_STOCK_THRESHOLD = 5;
 
   // ----------------------------------------
   // Available devices grouped by category

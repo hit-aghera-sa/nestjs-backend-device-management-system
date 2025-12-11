@@ -15,39 +15,51 @@ export class EmployeesListComponent implements OnInit {
   private employeesService = inject(EmployeesService);
   public router = inject(Router);
 
+  page = signal(1);
+  limit = 5;
+  totalPages = signal(1);
+
   loading = signal(true);
   employees = signal<Employee[]>([]);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
 
-  // 🔍 Search text signal
   searchText = signal('');
 
   ngOnInit(): void {
     this.fetchEmployees();
   }
 
-  // Fetch employees with optional search query
   fetchEmployees(): void {
-    this.loading.set(true);
-    this.errorMessage.set(null);
+  this.loading.set(true);
 
-    const params: any = {};
-    if (this.searchText()) params.search = this.searchText();
+  const params: any = {
+    page: this.page(),
+    limit: this.limit
+  };
 
-    this.employeesService.getAll(params).subscribe({
-      next: (res) => {
-        this.employees.set(res.data);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(err?.error?.message || 'Failed to load employees.');
-        this.loading.set(false);
-      }
-    });
-  }
+  if (this.searchText()) params.search = this.searchText();
 
-  // Triggered on typing in search bar
+  console.log('→ fetchEmployees params:', params); // debug
+
+  this.employeesService.getAll(params).subscribe({
+    next: (res) => {
+      console.log('← employees response', res); // debug
+      // adapt depending on your response shape:
+      // if your backend wraps as { status, data: { employees, pagination } }
+      const payload = res.data;
+      this.employees.set(payload.employees || []);
+      this.totalPages.set(payload.pagination?.totalPages || 1);
+      this.loading.set(false);
+    },
+    error: (err) => {
+      console.error('fetchEmployees error', err);
+      this.errorMessage.set(err?.error?.message || 'Failed to load employees.');
+      this.loading.set(false);
+    }
+  });
+}
+
   onSearch(): void {
     this.fetchEmployees();
   }
@@ -64,19 +76,13 @@ export class EmployeesListComponent implements OnInit {
     this.router.navigate([`/employees/edit/${id}`]);
   }
 
-  // Send verification email
   verifyEmployee(emp: Employee): void {
     if (emp.isVerified) return;
 
     this.employeesService.resendVerification(emp.email).subscribe({
       next: () => {
         this.successMessage.set(`Verification link sent to ${emp.fullName}'s email.`);
-
-        // Refresh silently
-        this.employeesService.getAll().subscribe({
-          next: (res) => this.employees.set(res.data),
-          error: () => {}
-        });
+        this.fetchEmployees();   // 👈 FIX
       },
       error: (err) => {
         this.errorMessage.set(err?.error?.message || 'Failed to send verification email.');
@@ -84,17 +90,11 @@ export class EmployeesListComponent implements OnInit {
     });
   }
 
-  // Resend verification email
   resendEmail(emp: Employee): void {
     this.employeesService.resendVerification(emp.email).subscribe({
       next: () => {
         this.successMessage.set(`Resent verification email to ${emp.fullName}.`);
-
-        // Silent refresh
-        this.employeesService.getAll().subscribe({
-          next: (res) => this.employees.set(res.data),
-          error: () => {}
-        });
+        this.fetchEmployees();   // 👈 FIX
       },
       error: (err) => {
         this.errorMessage.set(err?.error?.message || 'Failed to resend verification email.');
@@ -124,4 +124,19 @@ export class EmployeesListComponent implements OnInit {
       ? 'bg-blue-100 text-blue-700'
       : 'bg-yellow-100 text-yellow-700';
   }
+
+  nextPage() {
+    if (this.page() < this.totalPages()) {
+      this.page.update(v => v + 1);
+      this.fetchEmployees();
+    }
+  }
+
+  prevPage() {
+    if (this.page() > 1) {
+      this.page.update(v => v - 1);
+      this.fetchEmployees();
+    }
+  }
+
 }

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 export interface Employee {
@@ -22,8 +22,20 @@ export class EmployeesService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/employees`;
 
-  getAll(params?: any) {
-    return this.http.get<{ status: string; data: Employee[] }>(`${environment.apiUrl}/employees`,{ params });
+ getAll(params?: any) {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach((k) => {
+        const v = params[k];
+        if (v !== undefined && v !== null && v !== '') {
+          httpParams = httpParams.set(k, String(v));
+        }
+      });
+    }
+    return this.http.get<{ status: string; data: { employees: Employee[]; pagination?: any } }>(
+      this.baseUrl,
+      { params: httpParams }
+    );
   }
 
   getById(id: string) {

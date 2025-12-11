@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import bcrypt from "bcrypt";
+import EmployeeModel from "./employee.model";
 import EmployeeRepository from "./employee.repository";
 import { IEmployee } from "./employee.model";
 import AppError from "../../core/errors/AppError";
@@ -10,9 +10,7 @@ import AssignmentRepository from "../assignment/assignment.repository";
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 class EmployeeService {
-  // ----------------------------
-  // Create Employee
-  // ----------------------------
+
   async createEmployee(data: Partial<IEmployee>) {
     const existing = await EmployeeRepository.findByEmail(data.email!);
     if (existing) throw new AppError("Email already exists", 400);
@@ -26,7 +24,6 @@ class EmployeeService {
       isVerified: false,
     });
 
-    // Generate verification token
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + VERIFICATION_TTL_MS);
 
@@ -48,28 +45,17 @@ class EmployeeService {
     return employee;
   }
 
-  // ----------------------------
-  // List employees with optional filters
-  // ----------------------------
   async listEmployees(query: any = {}) {
     const dbFilter: any = {};
 
-    // Status filter
-    if (query.status) {
-      dbFilter.status = query.status;
-    }
+    // filters …
+    if (query.status) dbFilter.status = query.status;
 
-    // Verified filter
-    if (query.isVerified === "true") {
-      dbFilter.isVerified = true;
-    } else if (query.isVerified === "false") {
-      dbFilter.isVerified = false;
-    }
+    if (query.isVerified === "true") dbFilter.isVerified = true;
+    else if (query.isVerified === "false") dbFilter.isVerified = false;
 
-    // Search filter (name, email, department, designation)
     if (query.search) {
       const search = query.search;
-
       dbFilter.$or = [
         { fullName: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
@@ -78,32 +64,46 @@ class EmployeeService {
       ];
     }
 
-    return EmployeeRepository.findAll(dbFilter);
+    // Pagination
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Query using mongoose directly
+    const [employees, total] = await Promise.all([
+      EmployeeModel.find(dbFilter)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
+
+      EmployeeModel.countDocuments(dbFilter),
+    ]);
+      // inside EmployeeService.listEmployees or controller (temporary)
+console.log('listEmployees query:', query);
+
+    return {
+      employees,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
-
-  // ----------------------------
-  // Get employee by ID
-  // ----------------------------
   async getEmployeeById(id: string) {
     const employee = await EmployeeRepository.findById(id);
     if (!employee) throw new AppError("Employee not found", 404);
     return employee;
   }
 
-  // ----------------------------
-  // Update employee
-  // ----------------------------
   async updateEmployee(id: string, data: Partial<IEmployee>) {
     const employee = await EmployeeRepository.update(id, data);
     if (!employee) throw new AppError("Employee not found", 404);
     return employee;
   }
 
-  // ----------------------------
-  // Delete employee
-  // (Prevent delete if assigned devices exist)
-  // ----------------------------
   async deleteEmployee(id: string) {
     const employee = await EmployeeRepository.findById(id);
     if (!employee) throw new AppError("Employee not found", 404);
@@ -116,9 +116,6 @@ class EmployeeService {
     return await EmployeeRepository.delete(id);
   }
 
-  // ----------------------------
-  // Verify Employee Email
-  // ----------------------------
   async verifyEmployee(token: string) {
     const employee = await EmployeeRepository.findByVerificationToken(token);
     if (!employee) throw new AppError("Invalid verification token", 400);
@@ -131,9 +128,6 @@ class EmployeeService {
     return true;
   }
 
-  // ----------------------------
-  // Resend Verification Email
-  // ----------------------------
   async resendVerification(email: string) {
     const employee = await EmployeeRepository.findByEmail(email);
     if (!employee) throw new AppError("Employee not found", 404);

@@ -185,4 +185,8 @@ export class AssignmentListComponent implements OnInit {
     }
   }
 
+  openHistory() {
+    this.router.navigate(['/assignments/history']);
+  }
+
 }

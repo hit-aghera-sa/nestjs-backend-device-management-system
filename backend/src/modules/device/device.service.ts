@@ -27,13 +27,16 @@ class DeviceService {
     return device;
   }
 
-// DeviceService.ts
   async listDevices(query: any = {}) {
     const dbFilter: any = {};
 
-    // ----- FILTERS -----
-    if (query.category) dbFilter.category = query.category;
-    if (query.status) dbFilter.status = query.status;
+    if (query.category && query.category !== "ALL") {
+      dbFilter.category = query.category;
+    }
+
+    if (query.status && query.status !== "ALL") {
+      dbFilter.status = query.status;
+    }
 
     if (query.search) {
       dbFilter.$or = [
@@ -43,7 +46,6 @@ class DeviceService {
       ];
     }
 
-    // ----- PAGINATION -----
     const page = parseInt(query.page) || 1;
     const limit = parseInt(query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -64,10 +66,9 @@ class DeviceService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
-      }
+      },
     };
   }
-
 
   async getDeviceById(id: string) {
     const device = await DeviceRepository.findById(id);

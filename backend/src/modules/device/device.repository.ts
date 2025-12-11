@@ -6,7 +6,7 @@ class DeviceRepository {
   }
 
   async findAll(filter: any = {}) {
-    return DeviceModel.find(filter).exec();
+    return DeviceModel.find(filter)
   }
 
   async findById(id: string) {

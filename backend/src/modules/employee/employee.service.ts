@@ -54,6 +54,10 @@ class EmployeeService {
     if (query.isVerified === "true") dbFilter.isVerified = true;
     else if (query.isVerified === "false") dbFilter.isVerified = false;
 
+    if (query.department) {
+      dbFilter.department = { $regex: query.department, $options: "i" };
+    }
+
     if (query.search) {
       const search = query.search;
       dbFilter.$or = [
@@ -63,6 +67,7 @@ class EmployeeService {
         { designation: { $regex: search, $options: "i" } },
       ];
     }
+
 
     // Pagination
     const page = parseInt(query.page) || 1;

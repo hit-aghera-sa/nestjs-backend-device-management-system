@@ -1,3 +1,5 @@
+// src/app/features/devices/list/devices-list.component.ts
+
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -25,10 +27,10 @@ export interface Device {
 })
 export class DevicesListComponent implements OnInit {
 
-  private deviceService = inject(DeviceService);   // ✅ FIXED
+  private deviceService = inject(DeviceService);
   public router = inject(Router);
 
-  // -------- Pagination --------
+  // Pagination
   page = signal(1);
   limit = 5;
   totalPages = signal(1);
@@ -36,12 +38,21 @@ export class DevicesListComponent implements OnInit {
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   devices = signal<Device[]>([]);
+
+  // Filters
   searchText = signal("");
+  categoryFilter = signal('');
+  statusFilter = signal('');
+  brandFilter = signal('');
+
+  // Dynamic categories (optional)
+  categories = ['laptop', 'moniter', 'tablet', 'keyboard', 'mouse', 'mobile', 'printer', 'headphone'];
 
   ngOnInit(): void {
     this.fetchDevices();
   }
 
+  // Fetch devices with filters
   fetchDevices(): void {
     this.loading.set(true);
 
@@ -51,18 +62,27 @@ export class DevicesListComponent implements OnInit {
     };
 
     if (this.searchText()) params.search = this.searchText();
+    if (this.categoryFilter()) params.category = this.categoryFilter();
+    if (this.statusFilter()) params.status = this.statusFilter();
+    if (this.brandFilter()) params.search = this.brandFilter();
 
     this.deviceService.getDevices(params).subscribe({
-      next: (res: { status: string; data: any }) => {   // ✅ typed
+      next: (res: any) => {
         this.devices.set(res.data.devices);
         this.totalPages.set(res.data.pagination.totalPages);
         this.loading.set(false);
       },
-      error: (err: any) => {   // ✅ typed
+      error: (err: any) => {
         this.errorMessage.set(err?.error?.message || 'Failed to load devices');
         this.loading.set(false);
       }
     });
+  }
+
+  // Apply filters (reset to page 1)
+  applyFilters(): void {
+    this.page.set(1);
+    this.fetchDevices();
   }
 
   onSearch(): void {
@@ -70,15 +90,15 @@ export class DevicesListComponent implements OnInit {
     this.fetchDevices();
   }
 
-  viewDevice(id: string): void {
+  viewDevice(id: string) {
     this.router.navigate([`/devices/view/${id}`]);
   }
 
-  editDevice(id: string): void {
+  editDevice(id: string) {
     this.router.navigate([`/devices/edit/${id}`]);
   }
 
-  deleteDevice(device: Device): void {
+  deleteDevice(device: Device) {
     this.deviceService.deleteDevice(device._id).subscribe({
       next: () => this.fetchDevices(),
       error: (err: any) =>
@@ -94,7 +114,8 @@ export class DevicesListComponent implements OnInit {
       MAINTENANCE: 'bg-yellow-100 text-yellow-800'
     }[status];
   }
-   nextPage() {
+
+  nextPage() {
     if (this.page() < this.totalPages()) {
       this.page.update(v => v + 1);
       this.fetchDevices();

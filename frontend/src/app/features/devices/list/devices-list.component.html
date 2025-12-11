@@ -134,5 +134,21 @@
       <p class="text-gray-500 text-sm">Try adding a new device.</p>
     </div>
   }
+ 
+   <div class="flex justify-between items-center mt-4">
+    <button (click)="prevPage()" 
+            [disabled]="page() === 1"
+            class="px-4 py-2 bg-gray-200 rounded">
+      Prev
+    </button>
 
+    <span>Page {{ page() }} of {{ totalPages() }}</span>
+
+    <button (click)="nextPage()" 
+            [disabled]="page() === totalPages()"
+            class="px-4 py-2 bg-gray-200 rounded">
+      Next
+    </button>
+  </div>
+  
 </div>

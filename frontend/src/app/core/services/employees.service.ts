@@ -38,6 +38,13 @@ export class EmployeesService {
     );
   }
 
+  getDevices(params?: any){
+    return this.http.get<any>(this.baseUrl, {
+      params: params,
+      withCredentials: true
+    });
+  }
+
   getById(id: string) {
     return this.http.get<{ status: string; data: Employee }>(`${this.baseUrl}/${id}`);
   }

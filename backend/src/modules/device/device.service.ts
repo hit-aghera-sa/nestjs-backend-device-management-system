@@ -1,7 +1,7 @@
 import DeviceRepository from "./device.repository";
 import { IDevice, DeviceStatus } from "./device.model";
 import AppError from "../../core/errors/AppError";
-import { logger } from "../../core/logger/logger";
+import {DeviceModel} from "./device.model"; 
 import AssignmentRepository from "../assignment/assignment.repository";
 
 class DeviceService {
@@ -27,27 +27,47 @@ class DeviceService {
     return device;
   }
 
-  async listDevices(filter: any = {}) {
+// DeviceService.ts
+  async listDevices(query: any = {}) {
     const dbFilter: any = {};
 
-    if (filter.category) {
-      dbFilter.category = filter.category;
-    }
+    // ----- FILTERS -----
+    if (query.category) dbFilter.category = query.category;
+    if (query.status) dbFilter.status = query.status;
 
-    if (filter.status) {
-      dbFilter.status = filter.status;
-    }
-
-    if (filter.search) {
+    if (query.search) {
       dbFilter.$or = [
-        { deviceName: { $regex: filter.search, $options: "i" } },
-        { serialNumber: { $regex: filter.search, $options: "i" } },
-        { modelNumber: { $regex: filter.search, $options: "i" } },
+        { deviceName: { $regex: query.search, $options: "i" } },
+        { serialNumber: { $regex: query.search, $options: "i" } },
+        { modelNumber: { $regex: query.search, $options: "i" } },
       ];
     }
 
-    return DeviceRepository.findAll(dbFilter);
+    // ----- PAGINATION -----
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [devices, total] = await Promise.all([
+      DeviceModel.find(dbFilter)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }),
+
+      DeviceModel.countDocuments(dbFilter)
+    ]);
+
+    return {
+      devices,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    };
   }
+
 
   async getDeviceById(id: string) {
     const device = await DeviceRepository.findById(id);

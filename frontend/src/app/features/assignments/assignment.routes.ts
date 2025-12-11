@@ -20,10 +20,10 @@ export const ASSIGNMENT_ROUTES: Routes = [
         .then(m => m.AssignmentReturnComponent)
   },
   {
-    path: 'view/:id',
+    path: 'history',
     loadComponent: () =>
-      import('./assignment-view/assignment-view.component')
-        .then(m => m.AssignmentViewComponent)
+      import('./assignment-history/assignment-history.component')
+        .then(m => m.AssignmentHistoryComponent)
   }
 
 ];

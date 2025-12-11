@@ -1,0 +1,71 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+
+  <h1 class="text-2xl font-bold mb-6">Assignment History</h1>
+
+  <!-- Filters -->
+  <div class="bg-white p-4 rounded-xl shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Employee Filter -->
+    <div>
+      <label class="text-sm text-gray-600 font-semibold">Select Employee</label>
+      <select
+        class="w-full p-2 border rounded-lg mt-1"
+        [(ngModel)]="selectedEmployee"
+        (change)="loadEmployeeHistory()"
+      >
+        <option value="">-- Choose Employee --</option>
+        <option *ngFor="let emp of employees" [value]="emp._id">
+          {{ emp.fullName }} ({{ emp.department }})
+        </option>
+      </select>
+    </div>
+
+    <!-- Device Filter -->
+    <div>
+      <label class="text-sm text-gray-600 font-semibold">Select Device</label>
+      <select
+        class="w-full p-2 border rounded-lg mt-1"
+        [(ngModel)]="selectedDevice"
+        (change)="loadDeviceHistory()"
+      >
+        <option value="">-- Choose Device --</option>
+        <option *ngFor="let dev of devices" [value]="dev._id">
+          {{ dev.deviceName }} → {{ dev.serialNumber }}
+        </option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- Results -->
+  <div *ngIf="history.length > 0" class="bg-white shadow rounded-xl overflow-hidden">
+
+    <table class="w-full">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-3 text-left text-sm font-medium">Employee</th>
+          <th class="p-3 text-left text-sm font-medium">Device</th>
+          <th class="p-3 text-left text-sm font-medium">Assigned At</th>
+          <th class="p-3 text-left text-sm font-medium">Returned At</th>
+          <th class="p-3 text-left text-sm font-medium">Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let a of history" class="border-b">
+          <td class="p-3">{{ a.employee.fullName }}</td>
+          <td class="p-3">{{ a.device.deviceName }}</td>
+          <td class="p-3">{{ format(a.assignedAt) }}</td>
+          <td class="p-3">{{ a.returnedAt ? format(a.returnedAt) : 'Not Returned' }}</td>
+          <td class="p-3">{{ a.status }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <div *ngIf="history.length === 0" class="text-gray-500 text-center p-6">
+    No history found. Select an employee or device.
+  </div>
+
+</div>

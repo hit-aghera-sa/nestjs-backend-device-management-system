@@ -49,6 +49,64 @@
       <p class="text-gray-600">Loading assignments...</p>
     </div>
   }
+  <!-- FILTERS -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+
+    <!-- Status Filter -->
+    <div>
+      <label class="text-sm font-medium text-gray-700">Status</label>
+      <select class="w-full p-2 border rounded-lg" [(ngModel)]="filters.status" (change)="applyFilters()">
+        <option value="">All</option>
+        <option value="ASSIGNED">Assigned</option>
+        <option value="RETURNED">Returned</option>
+      </select>
+    </div>
+
+    <!-- Employee Filter -->
+    <div>
+      <label class="text-sm font-medium text-gray-700">Employee</label>
+      <input 
+        type="text"
+        [(ngModel)]="filters.employee"
+        (input)="applyFilters()"
+        class="w-full p-2 border rounded-lg"
+        placeholder="Search employee..."
+      />
+    </div>
+
+    <!-- Device Category -->
+    <div>
+      <label class="text-sm font-medium text-gray-700">Device Category</label>
+      <input 
+        type="text"
+        [(ngModel)]="filters.category"
+        (input)="applyFilters()"
+        class="w-full p-2 border rounded-lg"
+        placeholder="e.g. laptop, monitor"
+      />
+    </div>
+
+    <!-- Date Range -->
+    <div>
+      <label class="text-sm font-medium text-gray-700">Date Range</label>
+      <div class="flex gap-2">
+        <input type="date" [(ngModel)]="filters.startDate" (change)="applyFilters()" class="p-2 border rounded-lg w-1/2">
+        <input type="date" [(ngModel)]="filters.endDate" (change)="applyFilters()" class="p-2 border rounded-lg w-1/2">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SEARCH BAR -->
+  <div class="mb-6">
+    <input 
+      type="text"
+      placeholder="Search assignments..."
+      class="w-full p-3 border rounded-lg"
+      [(ngModel)]="filters.search"
+      (input)="applyFilters()"
+    />
+  </div>
 
   <!-- Table -->
   @if (!loading() && assignments()) {
@@ -60,6 +118,10 @@
               <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
               <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
               <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Assignment Date</th>
+
+              <!-- EXPECTED RETURN (NEW) -->
+              <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Expected Return</th>
+
               <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Return Date</th>
               <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -91,6 +153,15 @@
                 <!-- ASSIGNED DATE -->
                 <td class="py-4 px-6 text-sm text-gray-900">
                   {{ formatDate(assignment.assignedAt) }}
+                </td>
+
+                <!-- EXPECTED RETURN DATE (NEW) -->
+                <td class="py-4 px-6 text-sm text-gray-900">
+                  @if (assignment.expectedReturnDate) {
+                    {{ formatDate(assignment.expectedReturnDate) }}
+                  } @else {
+                    <span class="text-gray-400">No date</span>
+                  }
                 </td>
 
                 <!-- RETURN DATE -->
@@ -200,4 +271,31 @@
       </button>
     </div>
   }
+
+  <!-- PAGINATION -->
+<div class="flex justify-between items-center mt-4 px-6 py-4">
+  
+  <!-- Previous Button -->
+  <button
+    (click)="prevPage()"
+    [disabled]="page === 1"
+    class="px-4 py-2 bg-gray-200 text-gray-800 rounded disabled:opacity-50">
+    Previous
+  </button>
+
+  <!-- Page Info -->
+  <p class="text-gray-600">
+    Page {{ page }} of {{ totalPages() }}
+  </p>
+
+  <!-- Next Button -->
+  <button
+    (click)="nextPage()"
+    [disabled]="page >= totalPages()"
+    class="px-4 py-2 bg-gray-200 text-gray-800 rounded disabled:opacity-50">
+    Next
+  </button>
+
+</div>
+
 </div>

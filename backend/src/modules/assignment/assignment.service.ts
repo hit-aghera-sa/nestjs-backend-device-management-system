@@ -11,7 +11,7 @@ class AssignmentService {
   // ----------------------------
   // Assign a device to an employee
   // ----------------------------
-  async assignDevice(data: { employeeId: string; deviceId: string; notes?: string }) {
+  async assignDevice(data: { employeeId: string; deviceId: string; notes?: string, expectedReturnDate?: string | Date | null;  }) {
     const { employeeId, deviceId, notes } = data;
 
     if (!mongoose.Types.ObjectId.isValid(employeeId)) {
@@ -45,6 +45,10 @@ class AssignmentService {
       device: new mongoose.Types.ObjectId(deviceId),
       notes: notes || null,
       assignedAt: new Date(),
+      employeeName: employee.fullName,
+      deviceName: device.deviceName,
+      deviceCategory: device.category,
+      expectedReturnDate: data.expectedReturnDate ? new Date(data.expectedReturnDate) : null,
     });
 
     // Update device status → ASSIGNED
@@ -96,18 +100,54 @@ class AssignmentService {
     return assignment;
   }
 
-  // ----------------------------
-  // List all assignments + filters
-  // ----------------------------
   async listAssignments(filter: any = {}) {
     const dbFilter: any = {};
 
+    // Status
     if (filter.status) dbFilter.status = filter.status;
-    if (filter.employeeId) dbFilter.employee = filter.employeeId;
-    if (filter.deviceId) dbFilter.device = filter.deviceId;
 
-    return AssignmentRepository.listAssignments(dbFilter);
-  }
+    // Employee Name Search
+    if (filter.employee) {
+      dbFilter.employeeName = { $regex: filter.employee, $options: "i" };
+    }
+
+    // Device Category
+    if (filter.deviceCategory) {
+      dbFilter.deviceCategory = { $regex: filter.deviceCategory, $options: "i" };
+    }
+
+    // Date Range
+    if (filter.startDate || filter.endDate) {
+      dbFilter.assignedAt = {};
+      if (filter.startDate) dbFilter.assignedAt.$gte = new Date(filter.startDate);
+      if (filter.endDate) dbFilter.assignedAt.$lte = new Date(filter.endDate);
+    }
+
+    // Search
+    if (filter.search) {
+      dbFilter.$or = [
+        { employeeName: { $regex: filter.search, $options: "i" } },
+        { deviceName: { $regex: filter.search, $options: "i" } },
+        { deviceCategory: { $regex: filter.search, $options: "i" } },
+        { notes: { $regex: filter.search, $options: "i" } }
+      ];
+    }
+
+  // Pagination
+  const page = parseInt(filter.page || "1", 10);
+  const limit = parseInt(filter.limit || "10", 10);
+  const skip = (page - 1) * limit;
+
+  const data = await AssignmentRepository.listAssignments(dbFilter)
+    .skip(skip)
+    .limit(limit);
+
+  const total = await AssignmentRepository.count(dbFilter);
+
+  return { data, total, page, limit };
+}
+
+
 
   async deleteAssignment(id: string) {
   if (!mongoose.Types.ObjectId.isValid(id)) {

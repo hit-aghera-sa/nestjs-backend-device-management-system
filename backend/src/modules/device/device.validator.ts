@@ -23,6 +23,7 @@ export const updateDeviceSchema = Joi.object({
   purchaseDate: Joi.date().allow(null),
   warrantyExpiry: Joi.date().allow(null),
   purchasePrice: Joi.number().min(0).allow(null),
+  expectedReturnDate: Joi.date().allow(null),
   status: Joi.string().valid("AVAILABLE", "ASSIGNED", "DAMAGED", "MAINTENANCE"),
   specifications: Joi.string().allow(null, ""),
 }).min(1);

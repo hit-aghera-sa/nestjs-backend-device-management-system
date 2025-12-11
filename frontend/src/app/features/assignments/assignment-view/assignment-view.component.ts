@@ -52,7 +52,8 @@ export class AssignmentViewComponent implements OnInit {
     this.router.navigate(['/assignments']);
   }
 
-  formatDate(date: string) {
+  formatDate(date: string | null) {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleString();
   }
 }

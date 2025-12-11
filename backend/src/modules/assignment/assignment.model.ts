@@ -5,6 +5,12 @@ import { IDevice } from "../device/device.model";
 export interface IAssignment extends Document {
   employee: mongoose.Types.ObjectId | IEmployee;
   device: mongoose.Types.ObjectId | IDevice;
+
+  employeeName?: string;
+  deviceName?: string;
+  deviceCategory?: string;
+  expectedReturnDate?: Date | null;
+
   assignedAt: Date;
   returnedAt?: Date | null;
   notes?: string | null;
@@ -13,10 +19,16 @@ export interface IAssignment extends Document {
   updatedAt: Date;
 }
 
+
 const AssignmentSchema = new Schema<IAssignment>(
   {
     employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
     device: { type: Schema.Types.ObjectId, ref: "Device", required: true },
+
+    employeeName: { type: String },   // 🔵 NEW
+    deviceName: { type: String },     // 🔵 NEW
+    deviceCategory: { type: String }, // 🔵 NEW
+    expectedReturnDate: { type: Date, default: null }, // 🔵 NEW
 
     assignedAt: { type: Date, required: true, default: Date.now },
     returnedAt: { type: Date, default: null },
@@ -31,6 +43,7 @@ const AssignmentSchema = new Schema<IAssignment>(
   },
   { timestamps: true }
 );
+
 
 export const AssignmentModel = mongoose.model<IAssignment>("Assignment", AssignmentSchema);
 export default AssignmentModel;

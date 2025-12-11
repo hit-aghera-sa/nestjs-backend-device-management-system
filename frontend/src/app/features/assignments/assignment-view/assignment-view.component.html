@@ -81,6 +81,16 @@
       <div class="border rounded-lg p-5">
         <h2 class="text-lg font-semibold text-gray-800 mb-3">Timeline</h2>
 
+          <!-- EXPECTED RETURN DATE -->
+        <p class="text-gray-700 mt-2">
+          <strong>Expected Return:</strong>
+          @if (assignment().expectedReturnDate) {
+            {{ formatDate(assignment().expectedReturnDate) }}
+          } @else {
+            <span class="text-gray-500">No expected return date</span>
+          }
+        </p>
+
         <p class="text-gray-700">
           <strong>Assigned:</strong> {{ formatDate(assignment().assignedAt) }}
         </p>

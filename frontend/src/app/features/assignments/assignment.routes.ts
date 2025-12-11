@@ -18,6 +18,12 @@ export const ASSIGNMENT_ROUTES: Routes = [
     loadComponent: () =>
       import('./assignment-return/assignment-return.component')
         .then(m => m.AssignmentReturnComponent)
+  },
+  {
+    path: 'view/:id',
+    loadComponent: () =>
+      import('./assignment-view/assignment-view.component')
+        .then(m => m.AssignmentViewComponent)
   }
 
 ];

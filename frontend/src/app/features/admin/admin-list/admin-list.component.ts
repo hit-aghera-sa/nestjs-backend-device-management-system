@@ -15,7 +15,6 @@ interface Admin {
   lastLogin?: string;
 }
 
-
 @Component({
   selector: 'app-admin-list',
   standalone: true,
@@ -24,6 +23,7 @@ interface Admin {
   styleUrls: ['./admin-list.component.css']
 })
 export class AdminListComponent implements OnInit {
+
   private http = inject(HttpClient);
   public router = inject(Router);
 
@@ -35,24 +35,44 @@ export class AdminListComponent implements OnInit {
     this.fetchAdmins();
   }
 
+  // -------------------------------------------------------
+  // Map backend admin → frontend Admin interface
+  // -------------------------------------------------------
+  private mapAdmin(item: any): Admin {
+    return {
+      _id: item._id,
+      fullName: item.fullName,
+      email: item.email,
+      role: item.role,
+      createdAt: item.createdAt,
+      lastLogin: item.lastLogin,
+      status: item.isActive ? 'ACTIVE' : 'INACTIVE'
+    };
+  }
+
+  // -------------------------------------------------------
+  // LOAD ALL ADMINS
+  // -------------------------------------------------------
   fetchAdmins(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.http.get<{ status: string; data: Admin[] }>(`${environment.apiUrl}/auth/admins`)
-      .subscribe({
-        next: (response) => {
-          this.admins.set(response.data);
-          this.loading.set(false);
-        },
-        error: (error) => {
-          this.errorMessage.set(
-            error?.error?.message || 
-            'Failed to load admin list. Please try again.'
-          );
-          this.loading.set(false);
-        }
-      });
+    this.http.get<{ status: string; data: any[] }>(
+      `${environment.apiUrl}/auth/admins`
+    )
+    .subscribe({
+      next: (response) => {
+        const mapped = response.data.map(a => this.mapAdmin(a));
+        this.admins.set(mapped);
+        this.loading.set(false);
+      },
+      error: (error) => {
+        this.errorMessage.set(
+          error?.error?.message || 'Failed to load admin list. Please try again.'
+        );
+        this.loading.set(false);
+      }
+    });
   }
 
   reload(): void {
@@ -67,32 +87,49 @@ export class AdminListComponent implements OnInit {
     this.router.navigate([`/admin-management/edit/${id}`]);
   }
 
+  // -------------------------------------------------------
+  // ACTIVATE / DEACTIVATE ADMIN
+  // -------------------------------------------------------
   toggleStatus(admin: Admin): void {
-    if (!confirm(`Are you sure you want to ${admin.status === 'ACTIVE' ? 'deactivate' : 'activate'} ${admin.fullName}?`)) {
+    if (admin.role === 'MASTER') {
+      alert("MASTER admin status cannot be changed.");
       return;
     }
 
-    const endpoint = admin.status === 'ACTIVE' 
-      ? `${environment.apiUrl}/admin/admins/${admin._id}/deactivate`
-      : `${environment.apiUrl}/admin/admins/${admin._id}/activate`;
+    const confirmMsg =
+      admin.status === 'ACTIVE'
+        ? `Deactivate ${admin.fullName}?`
+        : `Activate ${admin.fullName}?`;
 
-    this.http.patch<{ status: string; data: Admin }>(endpoint, {})
+    if (!confirm(confirmMsg)) return;
+
+    const endpoint =
+      admin.status === 'ACTIVE'
+        ? `${environment.apiUrl}/auth/admins/${admin._id}/deactivate`
+        : `${environment.apiUrl}/auth/admins/${admin._id}/activate`;
+
+    this.http.patch<{ status: string; data: any }>(endpoint, {})
       .subscribe({
-        next: (response) => {
-          // Update local state
-          const updatedAdmins = this.admins().map(a => 
-            a._id === admin._id ? { ...a, status: response.data.status } : a
+        next: (res) => {
+          const updated = this.mapAdmin(res.data);
+
+          const newList = this.admins().map(a =>
+            a._id === admin._id ? updated : a
           );
-          this.admins.set(updatedAdmins);
+
+          this.admins.set(newList);
         },
         error: (error) => {
-          alert(`Failed to update status: ${error?.error?.message || 'Unknown error'}`);
+          alert(error?.error?.message || 'Failed to update status.');
         }
       });
   }
 
+  // -------------------------------------------------------
+  // Badge Helpers
+  // -------------------------------------------------------
   getRoleBadgeClass(role: string): string {
-    return role === 'MASTER' 
+    return role === 'MASTER'
       ? 'bg-purple-100 text-purple-800'
       : 'bg-blue-100 text-blue-800';
   }

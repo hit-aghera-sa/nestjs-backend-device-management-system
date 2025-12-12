@@ -3,17 +3,23 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAuthenticated()) {
+  // 🚫 DO NOT block login or register routes
+  if (state.url.startsWith('/auth')) {
     return true;
   }
 
-  // Store the attempted URL for redirecting after login
-  router.navigate(['/auth/login'], { 
-    queryParams: { returnUrl: state.url } 
+  // 🟢 If token exists in memory or localStorage → allow
+  if (auth.isAuthenticated()) {
+    return true;
+  }
+
+  // 🔴 Not authenticated → go to login, no backend check!
+  router.navigate(['/auth/login'], {
+    queryParams: { returnUrl: state.url }
   });
-  
+
   return false;
 };

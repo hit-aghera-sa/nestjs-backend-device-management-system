@@ -12,6 +12,7 @@ import { environment } from '../../../../environments/environment';
   styleUrls: ['./assignment-view.component.css'],
 })
 export class AssignmentViewComponent implements OnInit {
+
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -24,34 +25,46 @@ export class AssignmentViewComponent implements OnInit {
     this.fetchAssignment();
   }
 
+  // -------------------------------------------------------
+  // Fetch assignment details by ID
+  // -------------------------------------------------------
   fetchAssignment() {
     const id = this.route.snapshot.paramMap.get('id');
+
     if (!id) {
-      this.errorMessage.set('Invalid assignment ID');
+      this.errorMessage.set('Invalid assignment ID.');
+      this.loading.set(false);
       return;
     }
 
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.http.get(`${environment.apiUrl}/assignments/${id}`).subscribe({
-      next: (res: any) => {
-        this.assignment.set(res.data);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.errorMessage.set(
-          err?.error?.message || 'Failed to load assignment details.'
-        );
-      },
-    });
+    this.http.get(`${environment.apiUrl}/assignments/${id}`)
+      .subscribe({
+        next: (res: any) => {
+          this.assignment.set(res?.data || null);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.errorMessage.set(
+            err?.error?.message || 'Failed to load assignment details.'
+          );
+        },
+      });
   }
 
+  // -------------------------------------------------------
+  // Navigate back to assignments list
+  // -------------------------------------------------------
   back() {
     this.router.navigate(['/assignments']);
   }
 
+  // -------------------------------------------------------
+  // Date formatting helper
+  // -------------------------------------------------------
   formatDate(date: string | null) {
     if (!date) return 'N/A';
     return new Date(date).toLocaleString();

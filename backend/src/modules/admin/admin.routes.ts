@@ -74,4 +74,6 @@ router.patch(
   AdminController.activateAdmin
 );
 
+router.post("/logout", authMiddleware, AdminController.logout);
+
 export default router;

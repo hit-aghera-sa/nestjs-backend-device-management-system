@@ -14,47 +14,112 @@ export class AssignmentHistoryComponent implements OnInit {
 
   private http = inject(HttpClient);
 
-  employees: any[] = [];
-  devices: any[] = [];
+  // Signals for dropdown data
+  employees = signal<any[]>([]);
+  devices = signal<any[]>([]);
+  history = signal<any[]>([]);
 
-  selectedEmployee: string = '';
-  selectedDevice: string = '';
+  // Signals for selected filters
+  selectedEmployee = signal<string>('');
+  selectedDevice = signal<string>('');
 
-  history: any[] = [];
+  loading = signal(false);
+  errorMessage = signal<string | null>(null);
 
   ngOnInit() {
     this.loadEmployees();
     this.loadDevices();
   }
 
+  // -------------------------------------------------------
+  // Load dropdown options
+  // -------------------------------------------------------
   loadEmployees() {
-    this.http.get(`${environment.apiUrl}/employees`)
-      .subscribe((res: any) => this.employees = res.data);
+    this.http.get<any>(`${environment.apiUrl}/employees`)
+      .subscribe({
+        next: (res) => this.employees.set(res?.data || []),
+        error: () => this.errorMessage.set("Failed to load employees.")
+      });
   }
 
   loadDevices() {
-    this.http.get(`${environment.apiUrl}/devices`)
-      .subscribe((res: any) => this.devices = res.data.devices);
+    this.http.get<any>(`${environment.apiUrl}/devices`)
+      .subscribe({
+        next: (res) => this.devices.set(res?.data?.devices || []),
+        error: () => this.errorMessage.set("Failed to load devices.")
+      });
   }
 
+  // -------------------------------------------------------
+  // Triggered when employee is selected
+  // -------------------------------------------------------
   loadEmployeeHistory() {
-    if (!this.selectedEmployee) return;
-    this.http.get(`${environment.apiUrl}/assignments/history`, {
-      params: { employeeId: this.selectedEmployee },
-      withCredentials: true
-    })
-    .subscribe((res: any) => this.history = res.data);
+    const emp = this.selectedEmployee();
+
+    // Clear device selection when employee is chosen
+    if (emp) {
+      this.selectedDevice.set('');
+    }
+
+    this.loadHistory();
   }
 
+  // -------------------------------------------------------
+  // Triggered when device is selected
+  // -------------------------------------------------------
   loadDeviceHistory() {
-    if (!this.selectedDevice) return;
-    this.http.get(`${environment.apiUrl}/assignments/history`, {
-      params: { deviceId: this.selectedDevice },
-      withCredentials: true
-    })
-    .subscribe((res: any) => this.history = res.data);
+    const dev = this.selectedDevice();
+
+    // Clear employee selection when device is chosen
+    if (dev) {
+      this.selectedEmployee.set('');
+    }
+
+    this.loadHistory();
   }
 
+  // -------------------------------------------------------
+  // Fetch assignment history based on selection
+  // -------------------------------------------------------
+  loadHistory() {
+    this.history.set([]);
+    this.errorMessage.set(null);
+
+    const employeeId = this.selectedEmployee();
+    const deviceId = this.selectedDevice();
+
+    // Ensure only ONE filter is selected
+    if (employeeId && deviceId) {
+      this.errorMessage.set("Select either Employee OR Device, not both.");
+      return;
+    }
+
+    if (!employeeId && !deviceId) {
+      return; // nothing selected → show empty state
+    }
+
+    const params: any = {};
+    if (employeeId) params.employeeId = employeeId;
+    if (deviceId) params.deviceId = deviceId;
+
+    this.loading.set(true);
+
+    this.http.get<any>(`${environment.apiUrl}/assignments/history`, { params })
+      .subscribe({
+        next: (res) => {
+          this.history.set(res?.data || []);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(err?.error?.message || "Failed to load history.");
+          this.loading.set(false);
+        }
+      });
+  }
+
+  // -------------------------------------------------------
+  // Format date for UI
+  // -------------------------------------------------------
   format(date: string) {
     return new Date(date).toLocaleDateString();
   }

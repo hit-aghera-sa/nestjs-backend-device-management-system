@@ -6,7 +6,7 @@ export const masterAdminGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  const user = auth.getUser();
+  const user = auth.currentUser(); // ✔ replaced getUser()
 
   if (user?.role === 'MASTER') return true;
 

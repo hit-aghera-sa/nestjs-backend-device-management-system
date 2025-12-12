@@ -1,6 +1,7 @@
 import { Router } from "express";
 import DeviceController from "./device.controller";
 import { validate } from "../../core/middleware/validation.middleware";
+import authMiddleware from "../../core/middleware/auth.middleware";
 import {
   createDeviceSchema,
   updateDeviceSchema,
@@ -8,6 +9,7 @@ import {
 } from "./device.validator";
 
 const router = Router();
+router.use(authMiddleware);
 
 router.post("/", validate(createDeviceSchema), DeviceController.createDevice);
 router.get("/", DeviceController.getDevices);

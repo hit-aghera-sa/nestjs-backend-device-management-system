@@ -1,12 +1,14 @@
 import { Router } from "express";
 import AssignmentController from "./assignment.controller";
 import { validate } from "../../core/middleware/validation.middleware";
+import authMiddleware from "../../core/middleware/auth.middleware";
 import {
   assignDeviceSchema,
   returnDeviceSchema,
 } from "./assignment.validator";
 
 const router = Router();
+router.use(authMiddleware);
 
 router.post("/", validate(assignDeviceSchema), AssignmentController.assignDevice);
 

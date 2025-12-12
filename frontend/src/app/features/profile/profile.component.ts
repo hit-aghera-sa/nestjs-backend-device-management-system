@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -14,9 +15,10 @@ import { environment } from '../../../environments/environment';
 })
 export class ProfileComponent implements OnInit {
 
-  private http = inject(HttpClient);
   private fb = inject(FormBuilder);
+  private http = inject(HttpClient);      // ✅ FIXED
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   loading = signal(true);
   savingProfile = signal(false);
@@ -41,39 +43,45 @@ export class ProfileComponent implements OnInit {
     this.loadProfile();
   }
 
+  // 🔥 Load from AuthService (NOT manual /auth/me)
   loadProfile() {
     this.loading.set(true);
 
-    this.http.get<{ status: string; data: any }>(`${environment.apiUrl}/auth/me`)
-      .subscribe({
-        next: (res) => {
-          this.user.set(res.data);
-          this.profileForm.patchValue({
-            fullName: res.data.fullName,
-            email: res.data.email
-          });
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.errorMessage.set(err?.error?.message || 'Failed to load profile.');
-          this.loading.set(false);
-        }
-      });
+    const current = this.auth.currentUser();
+
+    if (!current) {
+      this.errorMessage.set('User not found. Please login again.');
+      this.loading.set(false);
+      return;
+    }
+
+    this.user.set(current);
+
+    this.profileForm.patchValue({
+      fullName: current.fullName,
+      email: current.email
+    });
+
+    this.loading.set(false);
   }
 
+  // 🔥 Update profile
   updateProfile() {
     if (this.profileForm.invalid) return;
 
     this.savingProfile.set(true);
-    this.successMessage.set(null);
     this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     this.http.patch(`${environment.apiUrl}/auth/update`, this.profileForm.value)
       .subscribe({
         next: () => {
           this.savingProfile.set(false);
           this.successMessage.set('Profile updated successfully.');
+
+          // Reload user from backend
           this.loadProfile();
+
           setTimeout(() => this.successMessage.set(null), 3000);
         },
         error: (err) => {
@@ -83,6 +91,7 @@ export class ProfileComponent implements OnInit {
       });
   }
 
+  // 🔥 Change password, then logout
   changePassword() {
     if (this.passwordForm.invalid) return;
 
@@ -100,21 +109,19 @@ export class ProfileComponent implements OnInit {
     this.http.patch(`${environment.apiUrl}/auth/change-password`, {
       oldPassword: currentPassword,
       newPassword
-    })
-    .subscribe({
+    }).subscribe({
       next: () => {
         this.savingPassword.set(false);
         this.successMessage.set('Password updated successfully.');
 
-        // 🔥 SECURITY BEST PRACTICE → Logout user immediately
-        localStorage.removeItem('auth_state');
+        // Logout fully
+        this.auth.logout();
 
-        // Redirect to login after a short delay
         setTimeout(() => {
           this.router.navigate(['/auth/login'], {
             queryParams: { msg: 'Password updated. Please log in again.' }
           });
-        }, 1500);
+        }, 1200);
 
         this.passwordForm.reset();
       },

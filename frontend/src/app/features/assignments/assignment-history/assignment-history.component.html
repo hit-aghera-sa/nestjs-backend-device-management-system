@@ -14,7 +14,9 @@
         (change)="loadEmployeeHistory()"
       >
         <option value="">-- Choose Employee --</option>
-        <option *ngFor="let emp of employees" [value]="emp._id">
+
+        <!-- FIXED SIGNAL USAGE -->
+        <option *ngFor="let emp of employees()" [value]="emp._id">
           {{ emp.fullName }} ({{ emp.department }})
         </option>
       </select>
@@ -29,7 +31,9 @@
         (change)="loadDeviceHistory()"
       >
         <option value="">-- Choose Device --</option>
-        <option *ngFor="let dev of devices" [value]="dev._id">
+
+        <!-- FIXED SIGNAL USAGE -->
+        <option *ngFor="let dev of devices()" [value]="dev._id">
           {{ dev.deviceName }} → {{ dev.serialNumber }}
         </option>
       </select>
@@ -38,7 +42,7 @@
   </div>
 
   <!-- Results -->
-  <div *ngIf="history.length > 0" class="bg-white shadow rounded-xl overflow-hidden">
+  <div *ngIf="history().length > 0" class="bg-white shadow rounded-xl overflow-hidden">
 
     <table class="w-full">
       <thead class="bg-gray-100">
@@ -52,7 +56,8 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let a of history" class="border-b">
+        <!-- FIXED SIGNAL USAGE -->
+        <tr *ngFor="let a of history()" class="border-b">
           <td class="p-3">{{ a.employee.fullName }}</td>
           <td class="p-3">{{ a.device.deviceName }}</td>
           <td class="p-3">{{ format(a.assignedAt) }}</td>
@@ -64,7 +69,7 @@
 
   </div>
 
-  <div *ngIf="history.length === 0" class="text-gray-500 text-center p-6">
+  <div *ngIf="history().length === 0" class="text-gray-500 text-center p-6">
     No history found. Select an employee or device.
   </div>
 

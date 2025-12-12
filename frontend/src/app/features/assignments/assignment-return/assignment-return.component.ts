@@ -13,6 +13,7 @@ import { environment } from '../../../../environments/environment';
   styleUrls: ['./assignment-return.component.css']
 })
 export class AssignmentReturnComponent implements OnInit {
+
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -31,55 +32,72 @@ export class AssignmentReturnComponent implements OnInit {
     { value: 'MAINTENANCE', label: 'Move to Maintenance' }
   ];
 
+  private assignmentId!: string;
+
   ngOnInit() {
+    this.assignmentId = this.route.snapshot.paramMap.get('id') || '';
+    if (!this.assignmentId) {
+      this.errorMessage.set("Invalid assignment ID.");
+      this.loading.set(false);
+      return;
+    }
+
     this.loadAssignment();
   }
 
+  // -------------------------------------------------------
+  // Fetch assignment details
+  // -------------------------------------------------------
   loadAssignment() {
-    const id = this.route.snapshot.params['id'];
-
-    this.http.get<any>(`${environment.apiUrl}/assignments/${id}`)
+    this.http.get<any>(`${environment.apiUrl}/assignments/${this.assignmentId}`)
       .subscribe({
         next: (res) => {
-          this.assignment.set(res.data);
-          this.setupForm(res.data);
+          const data = res?.data;
+          this.assignment.set(data);
+          this.setupForm(data);
           this.loading.set(false);
         },
-        error: (err) => {
+        error: () => {
           this.errorMessage.set("Failed to load assignment details.");
           this.loading.set(false);
         }
       });
   }
 
+  // -------------------------------------------------------
+  // Initialize form with assignment values
+  // -------------------------------------------------------
   setupForm(data: any) {
     this.editForm = this.fb.group({
-      notes: [data.notes || ""],
-      deviceStatus: ['AVAILABLE'] // default
+      notes: [data?.notes || ""],
+      deviceStatus: ['AVAILABLE']
     });
   }
 
-  // Submit "RETURN DEVICE"
+  // -------------------------------------------------------
+  // Submit Return Request
+  // -------------------------------------------------------
   submitReturn() {
-    if (!this.editForm.valid) return;
-
-    const id = this.route.snapshot.params['id'];
+    if (this.editForm.invalid) return;
 
     const payload = {
       notes: this.editForm.value.notes,
       deviceStatus: this.editForm.value.deviceStatus
     };
 
-    this.http.post(`${environment.apiUrl}/assignments/${id}/return`, payload)
+    this.http.post(`${environment.apiUrl}/assignments/${this.assignmentId}/return`, payload)
       .subscribe({
-        next: (res) => {
-          this.successMessage.set("Assignment successfully updated & device returned.");
+        next: () => {
+          this.successMessage.set("Device successfully returned and assignment updated.");
+
           setTimeout(() => {
             this.router.navigate(['/assignments']);
           }, 1500);
         },
         error: (err) => {
-          this.errorMessage.set(err?.error?.message || "Failed to return assignment.");
+          this.errorMessage.set(
+            err?.error?.message || "Failed to return device."
+          );
         }
       });
   }

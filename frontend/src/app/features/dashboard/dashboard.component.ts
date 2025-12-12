@@ -73,7 +73,7 @@ export class DashboardComponent {
   // Load Logged-in Admin Info
   // -------------------------------
   loadUserInfo() {
-    const userFromToken = this.auth.getUser();
+    const userFromToken = this.auth.currentUser();
     this.user.set(userFromToken);
   }
 

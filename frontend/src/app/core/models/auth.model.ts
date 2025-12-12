@@ -6,9 +6,9 @@ export interface AdminUser {
 }
 
 export interface AuthState {
-  token: string | null;
-  user: AdminUser | null;
+  user: any | null;
 }
+
 
 export interface LoginCredentials {
   email: string;

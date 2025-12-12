@@ -19,6 +19,9 @@ export class AssignmentService {
   }
 
   returnDevice(id: string, notes: string) {
-    return this.http.patch(`${environment.apiUrl}/assignments/${id}/return`, { notes });
+    return this.http.patch(
+      `${environment.apiUrl}/assignments/${id}/return`,
+      { notes }
+    );
   }
 }

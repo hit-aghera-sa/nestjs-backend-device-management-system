@@ -16,7 +16,7 @@ export class VerifyEmployeeComponent implements OnInit {
   loading = signal(true);
   verified = signal(false);
   errorMessage = signal<string | null>(null);
-  message = signal<string | null>(null); 
+  message = signal<string | null>(null);
 
   ngOnInit() {
     const token = this.route.snapshot.queryParamMap.get('token');
@@ -31,24 +31,31 @@ export class VerifyEmployeeComponent implements OnInit {
   }
 
   verifyToken(token: string) {
-    this.http.get(`${environment.apiUrl}/employees/verify/${token}`).subscribe({
-      next: (res: any) => {
-        this.loading.set(false);
+    this.loading.set(true);
 
-        if (res.data?.alreadyVerified) {
+    this.http.get(`${environment.apiUrl}/employees/verify/${token}`)
+      .subscribe({
+        next: (res: any) => {
+          this.loading.set(false);
+
+          // Handle already verified case
+          if (res?.data?.alreadyVerified) {
+            this.verified.set(true);
+            this.message.set("Your account is already verified.");
+            return;
+          }
+
+          // Verified successfully
           this.verified.set(true);
-          this.message.set("Your account is already verified.");  // ✅
-          return;
-        }
+          this.message.set("Your email has been successfully verified.");
+        },
 
-        this.verified.set(true);
-        this.message.set("Your email has been successfully verified."); // ✅
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.errorMessage.set(err?.error?.message || "Verification failed.");
-      }
-    });
+        error: (err) => {
+          this.loading.set(false);
+          this.errorMessage.set(
+            err?.error?.message || "Verification failed. Invalid or expired link."
+          );
+        }
+      });
   }
 }
-

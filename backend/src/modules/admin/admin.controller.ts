@@ -15,14 +15,30 @@ class AdminController {
     }
   }
 
-  async login(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await AdminService.login(req.body);
-      return res.status(200).json(successResponse({ token: result.token, admin: { id: result.admin._id, email: result.admin.email, fullName: result.admin.fullName } }, "Login successful"));
-    } catch (err) {
-      next(err);
-    }
+async login(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await AdminService.login(req.body);
+
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      secure: false,         // true only in production (HTTPS)
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    return res.status(200).json(successResponse({
+      admin: {
+        id: result.admin._id,
+        email: result.admin.email,
+        fullName: result.admin.fullName
+      }
+    }, "Login successful"));
+  } catch (err) {
+    next(err);
   }
+}
+
+
 
   async verify(req: Request, res: Response, next: NextFunction) {
     try {
@@ -123,8 +139,16 @@ class AdminController {
       next(err);
     }
   }
+  
+  async logout(req: Request, res: Response) {
+    res.clearCookie("token");
+    return res.json({
+      status: "success",
+      message: "Logged out successfully"
+    });
+  }
 
 }
 
-export default new AdminController();
 
+export default new AdminController();

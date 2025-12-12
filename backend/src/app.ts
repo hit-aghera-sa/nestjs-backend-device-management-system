@@ -6,9 +6,12 @@ import routes from "./modules";
 import { corsOptions } from "./config/cors.config";
 import errorMiddleware from "./core/middleware/error.middleware";
 import { logger } from "./core/logger/logger";
+import cookieParser from "cookie-parser";
+
 
 const app: Application = express();
 
+app.use(cookieParser());
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

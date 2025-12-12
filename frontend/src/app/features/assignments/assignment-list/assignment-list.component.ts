@@ -1,10 +1,11 @@
 // src/app/features/assignments/assignment-list/assignment-list.component.ts
+
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../../environments/environment';
 
 interface Assignment {
   id: string;
@@ -20,7 +21,7 @@ interface Assignment {
     serialNumber: string;
   };
   assignedAt: string | null;
-  expectedReturnDate?: string | null;   // ✔ Added
+  expectedReturnDate?: string | null;
   returnedAt?: string | null;
   status: 'ASSIGNED' | 'RETURNED' | string;
   notes?: string;
@@ -31,12 +32,14 @@ interface Assignment {
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './assignment-list.component.html',
-  styleUrls: ['./assignment-list.component.css']
+  styleUrls: ['./assignment-list.component.css'],
 })
 export class AssignmentListComponent implements OnInit {
+
   private http = inject(HttpClient);
   public router = inject(Router);
 
+  // Pagination
   page = 1;
   limit = 10;
   total = 0;
@@ -44,30 +47,34 @@ export class AssignmentListComponent implements OnInit {
   loading = signal(true);
   assignments = signal<Assignment[]>([]);
   errorMessage = signal<string | null>(null);
+
+  // Filters
   filters = {
     status: '',
     employee: '',
     category: '',
     startDate: '',
     endDate: '',
-    search: ''
+    search: '',
   };
-
 
   ngOnInit(): void {
     this.fetchAssignments();
   }
 
+  // -------------------------------------------------------
+  // Fetch Assignments
+  // -------------------------------------------------------
   fetchAssignments(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
 
     const params: any = {
       page: this.page,
-      limit: this.limit
+      limit: this.limit,
     };
 
-    // Apply Filters
+    // Add active filters
     if (this.filters.status) params.status = this.filters.status;
     if (this.filters.employee) params.employee = this.filters.employee;
     if (this.filters.category) params.deviceCategory = this.filters.category;
@@ -75,67 +82,78 @@ export class AssignmentListComponent implements OnInit {
     if (this.filters.endDate) params.endDate = this.filters.endDate;
     if (this.filters.search) params.search = this.filters.search;
 
-    this.http.get<{ status: string; data: any[]; total: number; page: number; limit: number }>(
-      `${environment.apiUrl}/assignments`,
-      { params }
-    ).subscribe({
-      next: (response) => {
+    this.http
+      .get<{
+        status: string;
+        data: any[];
+        total: number;
+        page: number;
+        limit: number;
+      }>(`${environment.apiUrl}/assignments`, { params })
+      .subscribe({
+        next: (response) => {
+          // Update pagination
+          this.total = response.total ?? 0;
+          this.page = response.page ?? this.page;
+          this.limit = response.limit ?? this.limit;
 
-        // Save pagination info returned by backend
-        this.total = response.total;
-        this.page = response.page;
-        this.limit = response.limit;
+          // Map to UI-friendly structure
+          const mapped = response.data.map((a: any) => ({
+            id: a._id,
+            employee: {
+              id: a.employee?._id,
+              fullName: a.employee?.fullName,
+              department: a.employee?.department,
+            },
+            device: {
+              id: a.device?._id,
+              deviceName: a.device?.deviceName,
+              model: a.device?.modelNumber,
+              serialNumber: a.device?.serialNumber,
+            },
+            assignedAt: a.assignedAt,
+            expectedReturnDate: a.expectedReturnDate,
+            returnedAt: a.returnedAt,
+            status: a.status,
+            notes: a.notes,
+          }));
 
-        const mappedAssignments = response.data.map((a: any) => ({
-          id: a._id,
-          employee: {
-            id: a.employee?._id,
-            fullName: a.employee?.fullName,
-            department: a.employee?.department
-          },
-          device: {
-            id: a.device?._id,
-            deviceName: a.device?.deviceName,
-            model: a.device?.modelNumber,
-            serialNumber: a.device?.serialNumber
-          },
-          assignedAt: a.assignedAt,
-          expectedReturnDate: a.expectedReturnDate,
-          returnedAt: a.returnedAt,
-          status: a.status,
-          notes: a.notes
-        }));
-
-        this.assignments.set(mappedAssignments);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.errorMessage.set("Failed to load assignments");
-        this.assignments.set([]);
-        this.loading.set(false);
-      }
-    });
+          this.assignments.set(mapped);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.errorMessage.set('Failed to load assignments.');
+          this.assignments.set([]);
+          this.loading.set(false);
+        },
+      });
   }
 
+  // -------------------------------------------------------
+  // Filters & Search
+  // -------------------------------------------------------
   applyFilters() {
+    this.page = 1;
     this.fetchAssignments();
   }
 
-  reload(): void {
+  reload() {
     this.fetchAssignments();
   }
 
-  viewAssignment(id: string): void {
+  viewAssignment(id: string) {
     this.router.navigate([`/assignments/view/${id}`]);
   }
 
+  // -------------------------------------------------------
+  // Helpers
+  // -------------------------------------------------------
   formatDate(dateString: string | null): string {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   }
 
@@ -149,24 +167,30 @@ export class AssignmentListComponent implements OnInit {
     return status === 'ASSIGNED' ? 'Assigned' : 'Returned';
   }
 
-  deleteAssignment(id: string): void {
+  // -------------------------------------------------------
+  // Delete Assignment
+  // -------------------------------------------------------
+  deleteAssignment(id: string) {
+    if (!confirm("Are you sure you want to delete this assignment?")) return;
+
     this.loading.set(true);
 
-    this.http.delete(`${environment.apiUrl}/assignments/${id}`)
-      .subscribe({
-        next: () => {
-          const updated = this.assignments().filter(a => a.id !== id);
-          this.assignments.set(updated);
-          this.loading.set(false);
-        },
-        error: (error) => {
-          console.error("Delete failed:", error);
-          this.errorMessage.set(error?.error?.message || "Failed to delete assignment.");
-          this.loading.set(false);
-        }
-      });
+    this.http.delete(`${environment.apiUrl}/assignments/${id}`).subscribe({
+      next: () => {
+        const updated = this.assignments().filter((a) => a.id !== id);
+        this.assignments.set(updated);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.errorMessage.set(err?.error?.message || 'Failed to delete assignment.');
+        this.loading.set(false);
+      },
+    });
   }
 
+  // -------------------------------------------------------
+  // Pagination
+  // -------------------------------------------------------
   totalPages() {
     return Math.ceil(this.total / this.limit);
   }
@@ -185,8 +209,10 @@ export class AssignmentListComponent implements OnInit {
     }
   }
 
+  // -------------------------------------------------------
+  // History Redirect
+  // -------------------------------------------------------
   openHistory() {
     this.router.navigate(['/assignments/history']);
   }
-
 }

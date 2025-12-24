@@ -1,56 +1,89 @@
-import AssignmentModel, { IAssignment } from "./assignment.model";
+import { AppDataSource } from "../../config/typeorm.config";
+import { Assignment } from "./assignment.entity";
+import { Employee } from "../employee/employee.entity";
+import { Device } from "../device/device.entity";
+import { FindOptionsWhere } from "typeorm";
 
 class AssignmentRepository {
-  async create(data: Partial<IAssignment>) {
-    return AssignmentModel.create(data);
+  private repo = AppDataSource.getRepository(Assignment);
+
+  async create(data: {
+    employee: Employee;
+    device: Device;
+    employeeName?: string | null;
+    deviceName?: string | null;
+    deviceCategory?: string | null;
+    expectedReturnDate?: Date | null;
+    notes?: string | null;
+    assignedAt: Date;
+  }) {
+    const assignment = this.repo.create(data);
+    return this.repo.save(assignment);
   }
 
   async findActiveByDevice(deviceId: string) {
-    return AssignmentModel.findOne({ device: deviceId, status: "ASSIGNED" })
-      .populate("employee")
-      .populate("device")
-      .exec();
+    return this.repo.findOne({
+      where: {
+        device: { id: deviceId },
+        status: "ASSIGNED",
+      },
+      relations: ["employee", "device"],
+    });
   }
 
   async findActiveByEmployee(employeeId: string) {
-    return AssignmentModel.findOne({ employee: employeeId, status: "ASSIGNED" })
-      .populate("employee")
-      .populate("device")
-      .exec();
+    return this.repo.findOne({
+      where: {
+        employee: { id: employeeId },
+        status: "ASSIGNED",
+      },
+      relations: ["employee", "device"],
+    });
   }
 
   async findById(id: string) {
-    return AssignmentModel.findById(id)
-      .populate("employee")
-      .populate("device")
-      .exec();
+    return this.repo.findOne({
+      where: { id },
+      relations: ["employee", "device"],
+    });
   }
 
-  listAssignments(filter: any = {}) {
-  return AssignmentModel.find(filter)
-    .populate("employee")
-    .populate("device");
-}
-
+  async listAssignments(
+    where: FindOptionsWhere<Assignment>,
+    skip: number,
+    take: number
+  ) {
+    return this.repo.findAndCount({
+      where,
+      skip,
+      take,
+      relations: ["employee", "device"],
+      order: { createdAt: "DESC" },
+    });
+  }
 
   async markReturned(id: string, notes?: string) {
-    return AssignmentModel.findByIdAndUpdate(
-      id,
-      { status: "RETURNED", returnedAt: new Date(), notes },
-      { new: true }
-    )
-      .populate("employee")
-      .populate("device")
-      .exec();
-    }
-    async delete(id: string) {
-    return AssignmentModel.findByIdAndDelete(id).exec();
+    await this.repo.update(
+      { id },
+      {
+        status: "RETURNED",
+        returnedAt: new Date(),
+        notes: notes ?? null,
+      }
+    );
+    return this.findById(id);
   }
-  count(filter: any = {}) {
-    return AssignmentModel.countDocuments(filter);
+
+  async delete(id: string) {
+    const assignment = await this.findById(id);
+    if (!assignment) return null;
+    await this.repo.remove(assignment);
+    return assignment;
+  }
+
+  async count(where: FindOptionsWhere<Assignment>) {
+    return this.repo.count({ where });
   }
 }
 
 export default new AssignmentRepository();
-
-

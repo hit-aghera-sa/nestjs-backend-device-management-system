@@ -13,9 +13,11 @@ export interface AuthRequest extends Request {
   user?: AuthUser;
 }
 
-export default function authMiddleware(req: AuthRequest, _res: Response, next: NextFunction) {
-
-  // 1️⃣ Read token from cookies
+export default function authMiddleware(
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction
+) {
   const token = req.cookies?.token;
 
   if (!token) {
@@ -28,7 +30,7 @@ export default function authMiddleware(req: AuthRequest, _res: Response, next: N
     req.user = {
       id: payload.id,
       role: payload.role,
-      email: payload.email
+      email: payload.email,
     };
 
     next();

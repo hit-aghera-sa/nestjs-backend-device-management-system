@@ -1,53 +1,30 @@
-import DeviceModel from "../device/device.model";
+import { AppDataSource } from "../../config/typeorm.config";
+import { Device } from "../device/device.entity";
 
-class StockService {
-  private LOW_STOCK_THRESHOLD = 5;
+export class StockService {
+  private readonly LOW_STOCK_THRESHOLD = 5;
 
-  // ----------------------------------------
-  // Available devices grouped by category
-  // Includes total and available counts per category
-  // ----------------------------------------
   async getAvailableStock() {
-    // 1. Get total devices per category
-    const totals = await DeviceModel.aggregate([
-      {
-        $group: {
-          _id: "$category",
-          total: { $sum: 1 }
-        }
-      }
-    ]);
+    const repo = AppDataSource.getRepository(Device);
 
-    // 2. Get available devices per category
-    const available = await DeviceModel.aggregate([
-      { $match: { status: "AVAILABLE" } },
-      {
-        $group: {
-          _id: "$category",
-          available: { $sum: 1 }
-        }
-      }
-    ]);
+    const raw = await repo
+      .createQueryBuilder("device")
+      .select("device.category", "category")
+      .addSelect("COUNT(*)", "total")
+      .addSelect(
+        `SUM(CASE WHEN device.status = 'AVAILABLE' THEN 1 ELSE 0 END)`,
+        "available"
+      )
+      .groupBy("device.category")
+      .getRawMany();
 
-    const totalMap = new Map();
-    const availableMap = new Map();
-
-    totals.forEach(t => totalMap.set(t._id, t.total));
-    available.forEach(a => availableMap.set(a._id, a.available));
-
-    const merged = [...totalMap.keys()].map(category => ({
-      category,
-      total: totalMap.get(category),
-      available: availableMap.get(category) || 0
+    return raw.map(r => ({
+      category: r.category,
+      total: Number(r.total),
+      available: Number(r.available),
     }));
-
-    return merged;
   }
 
-  // ----------------------------------------
-  // Low stock by category (available < threshold)
-  // Returns only categories below threshold
-  // ----------------------------------------
   async getLowStock() {
     const stock = await this.getAvailableStock();
 
@@ -56,9 +33,7 @@ class StockService {
       .map(item => ({
         category: item.category,
         available: item.available,
-        threshold: this.LOW_STOCK_THRESHOLD
+        threshold: this.LOW_STOCK_THRESHOLD,
       }));
   }
 }
-
-export default new StockService();

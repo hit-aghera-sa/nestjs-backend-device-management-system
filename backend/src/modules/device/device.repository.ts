@@ -1,30 +1,38 @@
-import DeviceModel, { IDevice } from "./device.model";
+import { AppDataSource } from "../../config/typeorm.config";
+import { Device } from "./device.entity";
+import { FindOptionsWhere } from "typeorm";
 
 class DeviceRepository {
-  async create(data: Partial<IDevice>) {
-    return DeviceModel.create(data);
+  private repo = AppDataSource.getRepository(Device);
+
+  async create(data: Partial<Device>) {
+    const device = this.repo.create(data);
+    return this.repo.save(device);
   }
 
-  async findAll(filter: any = {}) {
-    return DeviceModel.find(filter)
+  async findAll(filter: FindOptionsWhere<Device> = {}) {
+    return this.repo.find({ where: filter });
   }
 
   async findById(id: string) {
-    return DeviceModel.findById(id).exec();
+    return this.repo.findOne({ where: { id } });
   }
 
   async findBySerial(serialNumber: string) {
-    return DeviceModel.findOne({ serialNumber }).exec();
+    return this.repo.findOne({ where: { serialNumber } });
   }
 
-  async update(id: string, data: Partial<IDevice>) {
-    return DeviceModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  async update(id: string, data: Partial<Device>) {
+    await this.repo.update({ id }, data);
+    return this.findById(id);
   }
 
   async delete(id: string) {
-    return DeviceModel.findByIdAndDelete(id).exec();
+    const entity = await this.findById(id);
+    if (!entity) return null;
+    await this.repo.remove(entity);
+    return entity;
   }
 }
 
 export default new DeviceRepository();
-

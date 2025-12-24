@@ -1,25 +1,22 @@
-import { Request, Response, NextFunction } from "express";
-import StockService from "./stock.service";
+import { Controller, Get, UseGuards } from "@nestjs/common";
+import { StockService } from "./stock.service";
 import { successResponse } from "../../core/utils/response.util";
+import { AuthGuard } from "../../core/guards/auth.guard";
 
-class StockController {
-  async getAvailableStock(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = await StockService.getAvailableStock();
-      return res.status(200).json(successResponse(data));
-    } catch (err) {
-      next(err);
-    }
+@Controller("stock")
+@UseGuards(AuthGuard)
+export class StockController {
+  constructor(private readonly stockService: StockService) {}
+
+  @Get("available")
+  async getAvailableStock() {
+    const data = await this.stockService.getAvailableStock();
+    return successResponse(data);
   }
 
-  async getLowStock(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = await StockService.getLowStock();
-      return res.status(200).json(successResponse(data));
-    } catch (err) {
-      next(err);
-    }
+  @Get("low")
+  async getLowStock() {
+    const data = await this.stockService.getLowStock();
+    return successResponse(data);
   }
 }
-
-export default new StockController();

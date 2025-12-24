@@ -1,20 +1,31 @@
-import EmployeeModel from "../employee/employee.model";
-import DeviceModel from "../device/device.model";
-import AssignmentModel from "../assignment/assignment.model";
-import AppError from "../../core/errors/AppError";
+import { AppDataSource } from "../../config/typeorm.config";
+import { Employee } from "../employee/employee.entity";
+import { Device } from "../device/device.entity";
+import { Assignment } from "../assignment/assignment.entity";
 
-class DashboardService {
+export class DashboardService {
   // ----------------------------------------
   // OVERVIEW METRICS
   // ----------------------------------------
   async getOverview() {
-    const totalEmployees = await EmployeeModel.countDocuments();
-    const totalDevices = await DeviceModel.countDocuments();
+    const employeeRepo = AppDataSource.getRepository(Employee);
+    const deviceRepo = AppDataSource.getRepository(Device);
 
-    const assignedDevices = await DeviceModel.countDocuments({ status: "ASSIGNED" });
-    const availableDevices = await DeviceModel.countDocuments({ status: "AVAILABLE" });
-    const damagedDevices = await DeviceModel.countDocuments({ status: "DAMAGED" });
-    const maintenanceDevices = await DeviceModel.countDocuments({ status: "MAINTENANCE" });
+    const totalEmployees = await employeeRepo.count();
+    const totalDevices = await deviceRepo.count();
+
+    const assignedDevices = await deviceRepo.count({
+      where: { status: "ASSIGNED" },
+    });
+    const availableDevices = await deviceRepo.count({
+      where: { status: "AVAILABLE" },
+    });
+    const damagedDevices = await deviceRepo.count({
+      where: { status: "DAMAGED" },
+    });
+    const maintenanceDevices = await deviceRepo.count({
+      where: { status: "MAINTENANCE" },
+    });
 
     return {
       employees: { total: totalEmployees },
@@ -29,61 +40,55 @@ class DashboardService {
   }
 
   // ----------------------------------------
-  // RECENT ASSIGNMENTS (Last 10)
+  // RECENT ASSIGNMENTS (Last N)
   // ----------------------------------------
   async getRecentAssignments(limit = 10) {
-    return AssignmentModel.find({})
-      .populate("employee")
-      .populate("device")
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .exec();
+    const assignmentRepo = AppDataSource.getRepository(Assignment);
+
+    return assignmentRepo.find({
+      relations: ["employee", "device"],
+      order: { createdAt: "DESC" },
+      take: limit,
+    });
   }
 
   // ----------------------------------------
   // CATEGORY WISE STATS
-  // Shows: category, total, assigned, available
   // ----------------------------------------
   async getCategoryStats() {
-    const stats = await DeviceModel.aggregate([
-      {
-        $group: {
-          _id: "$category",
-          total: { $sum: 1 },
-          assigned: {
-            $sum: {
-              $cond: [{ $eq: ["$status", "ASSIGNED"] }, 1, 0],
-            },
-          },
-          available: {
-            $sum: {
-              $cond: [{ $eq: ["$status", "AVAILABLE"] }, 1, 0],
-            },
-          },
-          damaged: {
-            $sum: {
-              $cond: [{ $eq: ["$status", "DAMAGED"] }, 1, 0],
-            },
-          },
-          maintenance: {
-            $sum: {
-              $cond: [{ $eq: ["$status", "MAINTENANCE"] }, 1, 0],
-            },
-          },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
+    const deviceRepo = AppDataSource.getRepository(Device);
 
-    return stats.map((s) => ({
-      category: s._id,
-      total: s.total,
-      assigned: s.assigned,
-      available: s.available,
-      damaged: s.damaged,
-      maintenance: s.maintenance,
+    const raw = await deviceRepo
+      .createQueryBuilder("device")
+      .select("device.category", "category")
+      .addSelect("COUNT(*)", "total")
+      .addSelect(
+        `SUM(CASE WHEN device.status = 'ASSIGNED' THEN 1 ELSE 0 END)`,
+        "assigned"
+      )
+      .addSelect(
+        `SUM(CASE WHEN device.status = 'AVAILABLE' THEN 1 ELSE 0 END)`,
+        "available"
+      )
+      .addSelect(
+        `SUM(CASE WHEN device.status = 'DAMAGED' THEN 1 ELSE 0 END)`,
+        "damaged"
+      )
+      .addSelect(
+        `SUM(CASE WHEN device.status = 'MAINTENANCE' THEN 1 ELSE 0 END)`,
+        "maintenance"
+      )
+      .groupBy("device.category")
+      .orderBy("device.category", "ASC")
+      .getRawMany();
+
+    return raw.map((r) => ({
+      category: r.category,
+      total: Number(r.total),
+      assigned: Number(r.assigned),
+      available: Number(r.available),
+      damaged: Number(r.damaged),
+      maintenance: Number(r.maintenance),
     }));
   }
 }
-
-export default new DashboardService();

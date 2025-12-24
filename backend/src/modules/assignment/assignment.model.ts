@@ -25,10 +25,10 @@ const AssignmentSchema = new Schema<IAssignment>(
     employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
     device: { type: Schema.Types.ObjectId, ref: "Device", required: true },
 
-    employeeName: { type: String },   // 🔵 NEW
-    deviceName: { type: String },     // 🔵 NEW
-    deviceCategory: { type: String }, // 🔵 NEW
-    expectedReturnDate: { type: Date, default: null }, // 🔵 NEW
+    employeeName: { type: String },   
+    deviceName: { type: String },     
+    deviceCategory: { type: String }, 
+    expectedReturnDate: { type: Date, default: null }, 
 
     assignedAt: { type: Date, required: true, default: Date.now },
     returnedAt: { type: Date, default: null },

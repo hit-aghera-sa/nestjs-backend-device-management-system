@@ -30,4 +30,3 @@ const AdminSchema: Schema = new Schema<IAdmin>(
 export const AdminModel = mongoose.model<IAdmin>("Admin", AdminSchema);
 
 export default AdminModel;
-

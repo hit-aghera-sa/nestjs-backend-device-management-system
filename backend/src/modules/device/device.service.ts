@@ -1,48 +1,62 @@
 import DeviceRepository from "./device.repository";
-import { IDevice, DeviceStatus } from "./device.model";
+import { DeviceStatus } from "./device.entity";
 import AppError from "../../core/errors/AppError";
-import {DeviceModel} from "./device.model"; 
 import AssignmentRepository from "../assignment/assignment.repository";
+import { Like } from "typeorm";
 
-class DeviceService {
+export class DeviceService {
+  async createDevice(data: any) {
+    const exists = await DeviceRepository.findBySerial(data.serialNumber);
+    if (exists) {
+      throw new AppError(
+        "Device with this serial number already exists",
+        400
+      );
+    }
 
-  async createDevice(data: Partial<IDevice>) {
-    const exists = await DeviceRepository.findBySerial(data.serialNumber!);
-    if (exists) throw new AppError("Device with this serial number already exists", 400);
-
-    const device = await DeviceRepository.create({
+    return DeviceRepository.create({
       deviceName: data.deviceName,
-      category: data.category?.toLocaleLowerCase(),
-      brand: data.brand || null,
-      modelNumber: data.modelNumber || null,
+      category: data.category?.toLowerCase(),
+      brand: data.brand ?? null,
+      modelNumber: data.modelNumber ?? null,
       serialNumber: data.serialNumber,
-      purchaseDate: data.purchaseDate || null,
-      warrantyExpiry: data.warrantyExpiry || null,
-      purchasePrice: data.purchasePrice || null,
-      specifications: data.specifications || null,
-      expectedReturnDate: data.expectedReturnDate || null,
-      status: data.status || "AVAILABLE",
+      purchaseDate: data.purchaseDate ?? null,
+      warrantyExpiry: data.warrantyExpiry ?? null,
+      purchasePrice: data.purchasePrice ?? null,
+      specifications: data.specifications ?? null,
+      expectedReturnDate: data.expectedReturnDate ?? null,
+      status: data.status ?? "AVAILABLE",
     });
-
-    return device;
   }
 
   async listDevices(query: any = {}) {
-    const dbFilter: any = {};
+    const baseWhere: any = {};
 
     if (query.category && query.category !== "ALL") {
-      dbFilter.category = query.category;
+      baseWhere.category = query.category;
     }
 
     if (query.status && query.status !== "ALL") {
-      dbFilter.status = query.status;
+      baseWhere.status = query.status;
     }
 
+    let where: any = baseWhere;
+
+    // ✅ STRICT $or PARITY WITH MONGOOSE
     if (query.search) {
-      dbFilter.$or = [
-        { deviceName: { $regex: query.search, $options: "i" } },
-        { serialNumber: { $regex: query.search, $options: "i" } },
-        { modelNumber: { $regex: query.search, $options: "i" } },
+      where = [
+        {
+          ...baseWhere,
+          deviceName: Like(`%${query.search}%`),
+        },
+        {
+          ...baseWhere,
+          serialNumber: Like(`%${query.search}%`),
+        },
+        {
+          ...baseWhere,
+          modelNumber: Like(`%${query.search}%`),
+        },
       ];
     }
 
@@ -50,14 +64,13 @@ class DeviceService {
     const limit = parseInt(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const [devices, total] = await Promise.all([
-      DeviceModel.find(dbFilter)
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 }),
-
-      DeviceModel.countDocuments(dbFilter)
-    ]);
+    const [devices, total] =
+      await DeviceRepository["repo"].findAndCount({
+        where,
+        skip,
+        take: limit,
+        order: { createdAt: "DESC" },
+      });
 
     return {
       devices,
@@ -76,42 +89,47 @@ class DeviceService {
     return device;
   }
 
-  async updateDevice(id: string, data: Partial<IDevice>) {
+  async updateDevice(id: string, data: any) {
     const device = await DeviceRepository.update(id, data);
     if (!device) throw new AppError("Device not found", 404);
     return device;
   }
 
-
   async deleteDevice(id: string) {
     const device = await DeviceRepository.findById(id);
     if (!device) throw new AppError("Device not found", 404);
 
-    const activeAssignment = await AssignmentRepository.findActiveByDevice(id);
+    const activeAssignment =
+      await AssignmentRepository.findActiveByDevice(id);
+
     if (activeAssignment) {
-      throw new AppError("Cannot delete a device that is assigned to an employee", 400);
+      throw new AppError(
+        "Cannot delete a device that is assigned to an employee",
+        400
+      );
     }
 
-    return await DeviceRepository.delete(id);
+    return DeviceRepository.delete(id);
   }
 
   async updateStatus(id: string, status: DeviceStatus) {
     const device = await DeviceRepository.findById(id);
     if (!device) throw new AppError("Device not found", 404);
 
-    // You cannot manually set ASSIGNED
     if (status === "ASSIGNED") {
-      throw new AppError("Cannot manually set device status to ASSIGNED", 400);
+      throw new AppError(
+        "Cannot manually set device status to ASSIGNED",
+        400
+      );
     }
 
-    // If device is currently assigned, allow ONLY assignment service to change it
     if (device.status === "ASSIGNED") {
-      throw new AppError("Cannot change status of an assigned device", 400);
+      throw new AppError(
+        "Cannot change status of an assigned device",
+        400
+      );
     }
 
-    const updated = await DeviceRepository.update(id, { status });
-    return updated;
+    return DeviceRepository.update(id, { status });
   }
 }
-
-export default new DeviceService();

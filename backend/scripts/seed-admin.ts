@@ -1,33 +1,54 @@
+import "reflect-metadata";
 import dotenv from "dotenv";
 dotenv.config();
 
-import mongoose from "mongoose";
-import { connectDB } from "../src/config/db.config";
-import AdminModel from "../src/modules/admin/admin.model";
+import { DataSource } from "typeorm";
 import bcrypt from "bcrypt";
-import { logger } from "../src/core/logger/logger";
+import { Admin } from "../src/modules/admin/admin.entity";
+
+const dataSource = new DataSource({
+  type: "postgres",
+  host: process.env.DB_HOST || "localhost",
+  port: Number(process.env.DB_PORT) || 5432,
+  username: process.env.DB_USERNAME || "postgres",
+  password: process.env.DB_PASSWORD || "postgres",
+  database: process.env.DB_NAME || "device_inventory",
+  synchronize: false,
+  entities: [Admin],
+});
 
 async function seed() {
-  await connectDB();
+  await dataSource.initialize();
+
+  const repo = dataSource.getRepository(Admin);
 
   const email = process.env.SEED_ADMIN_EMAIL || "admin@company.com";
   const password = process.env.SEED_ADMIN_PASS || "Admin@123";
 
-  const existing = await AdminModel.findOne({ email }).exec();
+  const existing = await repo.findOne({ where: { email } });
   if (existing) {
-    logger.info("Seed admin already exists");
+    console.log("Seed admin already exists");
     process.exit(0);
   }
 
   const hashed = await bcrypt.hash(password, 10);
-  await AdminModel.create({ fullName: "Master Admin", email, password: hashed, role: "MASTER", isVerified: true });
 
-  logger.info(`Seeded admin: ${email}`);
+  const admin = repo.create({
+    fullName: "Master Admin",
+    email,
+    password: hashed,
+    role: "MASTER",
+    isVerified: true,
+    isActive: true,
+  });
+
+  await repo.save(admin);
+
+  console.log(`Seeded admin: ${email}`);
   process.exit(0);
 }
 
-seed().catch(err => {
-  logger.error("Seed error", err as Error);
+seed().catch((err) => {
+  console.error("Seed error", err);
   process.exit(1);
 });
-

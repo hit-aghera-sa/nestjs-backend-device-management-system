@@ -21,17 +21,17 @@ export const resendVerificationSchema = Joi.object({
 
 export const updateProfileSchema = Joi.object({
   fullName: Joi.string().min(3).max(100).optional(),
-  email: Joi.string().email().optional()
+  email: Joi.string().email().optional(),
 }).min(1);
 
 export const changePasswordSchema = Joi.object({
   oldPassword: Joi.string().min(6).required(),
-  newPassword: Joi.string().min(6).required()
+  newPassword: Joi.string().min(6).required(),
 });
 
 export const updateAdminSchema = Joi.object({
   fullName: Joi.string().min(3).max(100).optional(),
   email: Joi.string().email().optional(),
   role: Joi.string().valid("MASTER", "ADMIN").optional(),
-  isActive: Joi.boolean().optional()
+  isActive: Joi.boolean().optional(),
 }).min(1);

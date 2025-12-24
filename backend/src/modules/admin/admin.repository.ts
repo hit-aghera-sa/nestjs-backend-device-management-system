@@ -1,42 +1,62 @@
-import AdminModel, { IAdmin } from "./admin.model";
+import { AppDataSource } from "../../config/typeorm.config";
+import { Admin } from "./admin.entity";
 
 class AdminRepository {
-  async create(data: Partial<IAdmin>) {
-    return AdminModel.create(data);
+  private repo = AppDataSource.getRepository(Admin);
+
+  async create(data: Partial<Admin>) {
+    const admin = this.repo.create(data);
+    return this.repo.save(admin);
   }
 
   async findByEmail(email: string) {
-    return AdminModel.findOne({ email }).exec();
+    return this.repo.findOne({ where: { email } });
   }
 
   async findById(id: string) {
-    return AdminModel.findById(id).exec();
+    return this.repo.findOne({ where: { id } });
   }
 
   async findByVerificationToken(token: string) {
-    return AdminModel.findOne({ verificationToken: token }).exec();
+    return this.repo.findOne({ where: { verificationToken: token } });
   }
 
   async markVerified(id: string) {
-    return AdminModel.findByIdAndUpdate(id, { isVerified: true, verificationToken: null, verificationExpires: null }, { new: true }).exec();
+    await this.repo.update(
+      { id },
+      {
+        isVerified: true,
+        verificationToken: null,
+        verificationExpires: null,
+      }
+    );
+    return this.findById(id);
   }
 
   async setVerificationToken(id: string, token: string, expires: Date) {
-    return AdminModel.findByIdAndUpdate(id, { verificationToken: token, verificationExpires: expires }, { new: true }).exec();
+    await this.repo.update(
+      { id },
+      {
+        verificationToken: token,
+        verificationExpires: expires,
+      }
+    );
+    return this.findById(id);
   }
 
   async updatePassword(id: string, hashed: string) {
-    return AdminModel.findByIdAndUpdate(id, { password: hashed }, { new: true }).exec();
+    await this.repo.update({ id }, { password: hashed });
+    return this.findById(id);
   }
 
   async findAll() {
-    return AdminModel.find().exec();
+    return this.repo.find();
   }
 
-  async update(id: string, data: any) {
-    return AdminModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  async update(id: string, data: Partial<Admin>) {
+    await this.repo.update({ id }, data);
+    return this.findById(id);
   }
 }
 
 export default new AdminRepository();
-

@@ -1,11 +1,16 @@
+import { Controller, Post, Get, Patch, Put, Delete, Param, Body, Req, Res } from "@nestjs/common";
 import { Request, Response, NextFunction } from "express";
-import DeviceService from "./device.service";
+import { DeviceService } from "./device.service";
 import { successResponse } from "../../core/utils/response.util";
 
-class DeviceController {
+@Controller("device")
+export class DeviceController {
+  constructor(private readonly deviceService: DeviceService) {}
+
+  @Post()
   async createDevice(req: Request, res: Response, next: NextFunction) {
     try {
-      const device = await DeviceService.createDevice(req.body);
+      const device = await this.deviceService.createDevice(req.body);
       return res
         .status(201)
         .json(successResponse(device, "Device created successfully"));
@@ -14,28 +19,33 @@ class DeviceController {
     }
   }
 
+  @Get()
   async getDevices(req: Request, res: Response, next: NextFunction) {
     try {
-      const list = await DeviceService.listDevices(req.query);
+      const list = await this.deviceService.listDevices(req.query);
       return res.status(200).json(successResponse(list));
     } catch (err) {
       next(err);
     }
   }
 
-
+  @Get(":id")
   async getDeviceById(req: Request, res: Response, next: NextFunction) {
     try {
-      const device = await DeviceService.getDeviceById(req.params.id);
+      const device = await this.deviceService.getDeviceById(req.params.id);
       return res.status(200).json(successResponse(device));
     } catch (err) {
       next(err);
     }
   }
 
+  @Put(":id")
   async updateDevice(req: Request, res: Response, next: NextFunction) {
     try {
-      const updated = await DeviceService.updateDevice(req.params.id, req.body);
+      const updated = await this.deviceService.updateDevice(
+        req.params.id,
+        req.body
+      );
       return res
         .status(200)
         .json(successResponse(updated, "Device updated successfully"));
@@ -44,10 +54,13 @@ class DeviceController {
     }
   }
 
+  @Patch(":id/status")
   async updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { status } = req.body;
-      const updated = await DeviceService.updateStatus(req.params.id, status);
+      const updated = await this.deviceService.updateStatus(
+        req.params.id,
+        req.body.status
+      );
       return res
         .status(200)
         .json(successResponse(updated, "Device status updated successfully"));
@@ -56,9 +69,10 @@ class DeviceController {
     }
   }
 
+  @Delete(":id")
   async deleteDevice(req: Request, res: Response, next: NextFunction) {
     try {
-      await DeviceService.deleteDevice(req.params.id);
+      await this.deviceService.deleteDevice(req.params.id);
       return res
         .status(200)
         .json(successResponse(null, "Device deleted successfully"));
@@ -67,6 +81,3 @@ class DeviceController {
     }
   }
 }
-
-export default new DeviceController();
-

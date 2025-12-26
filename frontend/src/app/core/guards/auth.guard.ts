@@ -6,17 +6,18 @@ export const authGuard: CanActivateFn = async (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  // allow /auth/*
+  // allow /auth/**
   if (state.url.startsWith('/auth')) return true;
 
-  // already logged in in memory
+  // already authenticated in memory
   if (auth.isAuthenticated()) return true;
 
-  // wait for backend session check
+  // attempt backend session restore (cookie required)
   const ok = await auth.checkAuth();
 
   if (ok) return true;
 
+  // otherwise redirect to login
   router.navigate(['/auth/login'], {
     queryParams: { returnUrl: state.url }
   });

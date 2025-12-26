@@ -16,6 +16,8 @@ export class EmployeesViewComponent implements OnInit {
   private router = inject(Router);
   private employeesService = inject(EmployeesService);
 
+  showDeleteConfirm = false;
+  employeeToDeleteId: string | null = null;
   loading = signal(true);
   errorMessage = signal<string | null>(null);
   employee = signal<any>(null);
@@ -48,7 +50,7 @@ export class EmployeesViewComponent implements OnInit {
   }
 
   editEmployee() {
-    const id = this.employee()?._id;
+    const id = this.employee()?.id;
     if (id) this.router.navigate(['/employees/edit', id]);
   }
 
@@ -67,24 +69,36 @@ export class EmployeesViewComponent implements OnInit {
       .toUpperCase();
   }
 
-  // ---------------------------------------------------
-  // DELETE EMPLOYEE
-  // ---------------------------------------------------
-  deleteEmployee() {
+  confirmDelete() {
     const emp = this.employee();
     if (!emp) return;
 
-    const id = emp._id;                   
+    this.employeeToDeleteId = emp.id;
+    this.showDeleteConfirm = true;
+  }
 
-    if (!confirm(`Delete ${emp.fullName}? This action cannot be undone.`)) return;
+  deleteEmployee() {
+    if (!this.employeeToDeleteId) return;
 
-    this.employeesService.delete(id).subscribe({
-      next: () => this.router.navigate(['/employees']),
-      error: (err) =>
+    this.employeesService.delete(this.employeeToDeleteId).subscribe({
+      next: () => {
+        this.showDeleteConfirm = false;
+        this.router.navigate(['/employees']);
+      },
+      error: (err) => {
+        this.showDeleteConfirm = false;
+
         alert(
           err?.error?.message ||
           'Could not delete employee. Ensure no active device assignments exist.'
-        )
+        );
+      }
     });
   }
+
+  cancelDelete() {
+    this.showDeleteConfirm = false;
+    this.employeeToDeleteId = null;
+  }
+
 }

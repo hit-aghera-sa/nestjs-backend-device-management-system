@@ -1,96 +1,88 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Res } from "@nestjs/common";
-import { Request, Response, NextFunction } from "express";
-import { EmployeeService } from "./employee.service";
-import { successResponse } from "../../core/utils/response.util";
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Req,
+  HttpException,
+} from '@nestjs/common';
+import { Request } from 'express';
 
-@Controller("employees")
+import { EmployeeService } from './employee.service';
+import { successResponse } from '../../core/utils/response.util';
+import AppError from '../../core/errors/AppError';
+
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
+
+@Controller('employees')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
   @Post()
-  async createEmployee(req: Request, res: Response, next: NextFunction) {
-    try {
-      const employee = await this.employeeService.createEmployee(req.body);
-      return res.status(201).json(
-        successResponse(
-          {
-            id: employee.id,
-            fullName: employee.fullName,
-            email: employee.email,
-            department: employee.department,
-            status: employee.status,
-            isVerified: employee.isVerified,
-          },
-          "Employee created. Verification email sent."
-        )
-      );
-    } catch (err) {
-      next(err);
-    }
+  async createEmployee(@Body() body: CreateEmployeeDto) {
+    const employee = await this.employeeService.createEmployee(body);
+
+    return successResponse(
+      {
+        id: employee.id,
+        fullName: employee.fullName,
+        email: employee.email,
+        department: employee.department,
+        status: employee.status,
+        isVerified: employee.isVerified,
+      },
+      'Employee created. Verification email sent.',
+    );
   }
 
   @Get()
-  async getEmployees(req: Request, res: Response, next: NextFunction) {
+  async getEmployees(@Req() req: Request) {
+    const result = await this.employeeService.listEmployees(req.query);
+    return successResponse(result);
+  }
+
+  @Get('verify/:token')
+  async verifyEmployee(@Param('token') token: string) {
     try {
-      const result = await this.employeeService.listEmployees(req.query);
-      return res.status(200).json(successResponse(result));
-    } catch (err) {
-      next(err);
+      await this.employeeService.verifyEmployee(token);
+      return successResponse(null, 'Employee verified');
+    } catch (e) {
+      if (e instanceof AppError) {
+        throw new HttpException(e.message, e.statusCode || 400);
+      }
+      throw e;
     }
   }
 
-  @Get(":id")
-  async getEmployeeById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const employee = await this.employeeService.getEmployeeById(req.params.id);
-      return res.status(200).json(successResponse(employee));
-    } catch (err) {
-      next(err);
-    }
+  @Get(':id')
+  async getEmployeeById(@Param('id') id: string) {
+    const employee = await this.employeeService.getEmployeeById(id);
+    return successResponse(employee);
   }
 
-  @Patch(":id")
-  async updateEmployee(req: Request, res: Response, next: NextFunction) {
-    try {
-      const updated = await this.employeeService.updateEmployee(
-        req.params.id,
-        req.body
-      );
-      return res.status(200).json(successResponse(updated, "Employee updated"));
-    } catch (err) {
-      next(err);
-    }
+  @Patch(':id')
+  async updateEmployee(
+    @Param('id') id: string,
+    @Body() body: UpdateEmployeeDto,
+  ) {
+    const updated = await this.employeeService.updateEmployee(id, body);
+    return successResponse(updated, 'Employee updated');
   }
 
-  @Delete(":id")
-  async deleteEmployee(req: Request, res: Response, next: NextFunction) {
-    try {
-      await this.employeeService.deleteEmployee(req.params.id);
-      return res.status(200).json(successResponse(null, "Employee deleted"));
-    } catch (err) {
-      next(err);
-    }
+  @Delete(':id')
+  async deleteEmployee(@Param('id') id: string) {
+    await this.employeeService.deleteEmployee(id);
+    return successResponse(null, 'Employee deleted');
   }
 
-  @Get("verify/:token")
-  async verifyEmployee(req: Request, res: Response, next: NextFunction) {
-    try {
-      await this.employeeService.verifyEmployee(req.params.token);
-      return res.status(200).json(successResponse(null, "Employee verified"));
-    } catch (err) {
-      next(err);
-    }
-  }
-
-  @Post("resend-verification")
-  async resendVerification(req: Request, res: Response, next: NextFunction) {
-    try {
-      await this.employeeService.resendVerification(req.body.email);
-      return res
-        .status(200)
-        .json(successResponse(null, "Verification email resent"));
-    } catch (err) {
-      next(err);
-    }
+  @Post('resend-verification')
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    await this.employeeService.resendVerification(dto.email);
+    return successResponse(null, 'Verification email resent');
   }
 }

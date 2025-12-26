@@ -1,55 +1,76 @@
-import crypto from "crypto";
-import EmployeeRepository from "./employee.repository";
-import AppError from "../../core/errors/AppError";
-import { sendEmail } from "../../core/utils/email.util";
-import { logger } from "../../core/logger/logger";
-import AssignmentRepository from "../assignment/assignment.repository";
-import { Like } from "typeorm";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like } from 'typeorm';
+import crypto from 'crypto';
+
+import { Employee, EmployeeStatus } from './employee.entity';
+import AppError from '../../core/errors/AppError';
+import { sendEmail } from '../../core/utils/email.util';
+import { logger } from '../../core/logger/logger';
+import AssignmentRepository from '../assignment/assignment.repository';
+
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+@Injectable()
 export class EmployeeService {
-  async createEmployee(data: any) {
-    const existing = await EmployeeRepository.findByEmail(data.email);
-    if (existing) throw new AppError("Email already exists", 400);
+  constructor(
+    @InjectRepository(Employee)
+    private readonly repo: Repository<Employee>,
+  ) {}
 
-    const employee = await EmployeeRepository.create({
+  // ----------------------------------------------------
+  // CREATE EMPLOYEE
+  // ----------------------------------------------------
+  async createEmployee(data: CreateEmployeeDto) {
+    const existing = await this.repo.findOne({
+      where: { email: data.email },
+    });
+
+    if (existing) throw new AppError('Email already exists', 400);
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + VERIFICATION_TTL_MS);
+
+    const employee = this.repo.create({
       fullName: data.fullName,
       email: data.email,
       department: data.department,
       designation: data.designation ?? null,
       contactNumber: data.contactNumber ?? null,
+      status: EmployeeStatus.ACTIVE,
       isVerified: false,
-      status: "ACTIVE",
+      verificationToken: token,
+      verificationExpires: expires,
     });
 
-    const token = crypto.randomBytes(32).toString("hex");
-    const expires = new Date(Date.now() + VERIFICATION_TTL_MS);
+    await this.repo.save(employee);
 
-    await EmployeeRepository.setVerificationToken(employee.id, token, expires);
+    const verifyLink = `${process.env.FRONTEND_ORIGIN}/verify-employee?token=${token}`;
 
-    try {
-      const verifyLink = `${process.env.BACKEND_ORIGIN}/api/employees/verify/${token}`;
-      const html = `
-        <p>Hello ${employee.fullName},</p>
-        <p>Please verify your email by clicking the link below:</p>
-        <a href="${verifyLink}">Verify Employee Email</a>
-      `;
-      await sendEmail(employee.email, "Verify your employee account", html);
-    } catch (err) {
-      logger.error("Employee verification email send failed", err as Error);
-    }
+    const html = `
+      <p>Hello ${employee.fullName},</p>
+      <p>Please verify your email:</p>
+      <a href="${verifyLink}">Verify Employee Email</a>
+    `;
+
+    await sendEmail(employee.email, 'Verify your employee account', html);
 
     return employee;
   }
 
+  // ----------------------------------------------------
+  // LIST EMPLOYEES (with filters + pagination)
+  // ----------------------------------------------------
   async listEmployees(query: any = {}) {
     const baseWhere: any = {};
 
     if (query.status) baseWhere.status = query.status;
 
-    if (query.isVerified === "true") baseWhere.isVerified = true;
-    else if (query.isVerified === "false") baseWhere.isVerified = false;
+    if (query.isVerified === 'true') baseWhere.isVerified = true;
+    else if (query.isVerified === 'false') baseWhere.isVerified = false;
 
     if (query.department) {
       baseWhere.department = Like(`%${query.department}%`);
@@ -57,25 +78,12 @@ export class EmployeeService {
 
     let where: any = baseWhere;
 
-    // ✅ STRICT $or PARITY WITH MONGOOSE
     if (query.search) {
       where = [
-        {
-          ...baseWhere,
-          fullName: Like(`%${query.search}%`),
-        },
-        {
-          ...baseWhere,
-          email: Like(`%${query.search}%`),
-        },
-        {
-          ...baseWhere,
-          department: Like(`%${query.search}%`),
-        },
-        {
-          ...baseWhere,
-          designation: Like(`%${query.search}%`),
-        },
+        { ...baseWhere, fullName: Like(`%${query.search}%`) },
+        { ...baseWhere, email: Like(`%${query.search}%`) },
+        { ...baseWhere, department: Like(`%${query.search}%`) },
+        { ...baseWhere, designation: Like(`%${query.search}%`) },
       ];
     }
 
@@ -83,13 +91,12 @@ export class EmployeeService {
     const limit = parseInt(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const [employees, total] =
-      await EmployeeRepository["repo"].findAndCount({
-        where,
-        skip,
-        take: limit,
-        order: { createdAt: "DESC" },
-      });
+    const [employees, total] = await this.repo.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
 
     return {
       employees,
@@ -102,84 +109,97 @@ export class EmployeeService {
     };
   }
 
+  // ----------------------------------------------------
+  // GET BY ID
+  // ----------------------------------------------------
   async getEmployeeById(id: string) {
-    const employee = await EmployeeRepository.findById(id);
-    if (!employee) throw new AppError("Employee not found", 404);
+    const employee = await this.repo.findOne({ where: { id } });
+    if (!employee) throw new AppError('Employee not found', 404);
     return employee;
   }
 
-  async updateEmployee(id: string, data: any) {
-    const employee = await EmployeeRepository.update(id, data);
-    if (!employee) throw new AppError("Employee not found", 404);
-    return employee;
+  // ----------------------------------------------------
+  // UPDATE EMPLOYEE
+  // ----------------------------------------------------
+  async updateEmployee(id: string, data: UpdateEmployeeDto) {
+    await this.repo.update(id, data);
+    return this.getEmployeeById(id);
   }
 
+  // ----------------------------------------------------
+  // DELETE EMPLOYEE
+  // ----------------------------------------------------
   async deleteEmployee(id: string) {
-    const employee = await EmployeeRepository.findById(id);
-    if (!employee) throw new AppError("Employee not found", 404);
+    const employee = await this.getEmployeeById(id);
 
     const activeAssignment =
       await AssignmentRepository.findActiveByEmployee(id);
 
     if (activeAssignment) {
       throw new AppError(
-        "Cannot delete employee with assigned devices",
-        400
+        'Cannot delete employee with assigned devices',
+        400,
       );
     }
 
-    return EmployeeRepository.delete(id);
-  }
-
-  async verifyEmployee(token: string) {
-    const employee =
-      await EmployeeRepository.findByVerificationToken(token);
-    if (!employee) throw new AppError("Invalid verification token", 400);
-
-    if (
-      !employee.verificationExpires ||
-      employee.verificationExpires < new Date()
-    ) {
-      throw new AppError("Verification token expired", 400);
-    }
-
-    await EmployeeRepository.verifyEmployee(employee.id);
+    await this.repo.remove(employee);
     return true;
   }
 
-  async resendVerification(email: string) {
-    const employee = await EmployeeRepository.findByEmail(email);
-    if (!employee) throw new AppError("Employee not found", 404);
-    if (employee.isVerified)
-      throw new AppError("Employee already verified", 400);
+  // ----------------------------------------------------
+  // VERIFY EMPLOYEE
+  // ----------------------------------------------------
+  async verifyEmployee(token: string) {
+    const employee = await this.repo.findOne({
+      where: { verificationToken: token },
+    });
 
-    const token = crypto.randomBytes(32).toString("hex");
+    if (!employee) throw new AppError('Invalid verification token', 400);
+
+    if (
+      employee.verificationExpires &&
+      employee.verificationExpires < new Date()
+    ) {
+      throw new AppError('Verification token expired', 400);
+    }
+
+    await this.repo.update(employee.id, {
+      isVerified: true,
+      verificationToken: null,
+      verificationExpires: null,
+    });
+
+    return true;
+  }
+
+  // ----------------------------------------------------
+  // RESEND VERIFICATION EMAIL
+  // ----------------------------------------------------
+  async resendVerification(email: string) {
+    const employee = await this.repo.findOne({ where: { email } });
+
+    if (!employee) throw new AppError('Employee not found', 404);
+
+    if (employee.isVerified)
+      throw new AppError('Employee already verified', 400);
+
+    const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + VERIFICATION_TTL_MS);
 
-    await EmployeeRepository.setVerificationToken(
-      employee.id,
-      token,
-      expires
-    );
+    await this.repo.update(employee.id, {
+      verificationToken: token,
+      verificationExpires: expires,
+    });
 
-    try {
-      const verifyLink = `${process.env.FRONTEND_ORIGIN}/verify-employee?token=${token}`;
-      const html = `
-        <p>Hello ${employee.fullName},</p>
-        <p>Please verify your email by clicking the link below:</p>
-        <a href="${verifyLink}">Verify Employee Email</a>
-      `;
-      await sendEmail(
-        employee.email,
-        "Verify your employee account",
-        html
-      );
-    } catch (err) {
-      logger.error(
-        "Resend employee verification email failed",
-        err as Error
-      );
-    }
+    const verifyLink = `${process.env.FRONTEND_ORIGIN}/verify-employee?token=${token}`;
+
+    const html = `
+      <p>Hello ${employee.fullName},</p>
+      <p>Please verify your email by clicking the link below:</p>
+      <a href="${verifyLink}">Verify Employee Email</a>
+    `;
+
+    await sendEmail(employee.email, 'Verify your employee account', html);
 
     return true;
   }

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 export interface Employee {
-  _id: string;
+  id: string;
   fullName: string;
   email: string;
   department: string;
@@ -11,7 +11,7 @@ export interface Employee {
   contactNumber?: string;
   status: 'ACTIVE' | 'INACTIVE';
   isVerified: boolean;
-  createdAt: string;
+  createdAt?: string;
 }
 
 @Injectable({
@@ -22,7 +22,7 @@ export class EmployeesService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/employees`;
 
- getAll(params?: any) {
+  getAll(params?: any) {
     let httpParams = new HttpParams();
     if (params) {
       Object.keys(params).forEach((k) => {
@@ -57,8 +57,8 @@ export class EmployeesService {
     return this.http.patch<{ status: string; data: Employee }>(`${this.baseUrl}/${id}`, data);
   }
 
-  verify(id: string) {
-    return this.http.patch(`${environment.apiUrl}/employees/${id}/verify`, {});
+  verify(token: string) {
+    return this.http.get(`${this.baseUrl}/verify/${token}`);
   }
 
   resendVerification(email: string) {

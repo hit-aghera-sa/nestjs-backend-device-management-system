@@ -81,6 +81,9 @@ export class AdminService {
   // ---------------------------------------------------------
   // LOGIN
   // ---------------------------------------------------------
+// ---------------------------------------------------------
+// LOGIN
+// ---------------------------------------------------------
   async login(dto: LoginDto) {
 
     const email = dto.email.toLowerCase().trim();
@@ -89,14 +92,15 @@ export class AdminService {
       where: { email }
     });
 
-    if (!admin || !admin.isActive)
+    if (!admin)
       throw new AppError("Admin does not exist", 404);
 
-    if (!admin.isVerified)
-      throw new AppError("Please verify your email before login", 401);
+    if (!admin.isActive)
+      throw new AppError("Admin does not exist", 404);
 
     const matched = await bcrypt.compare(dto.password, admin.password);
-    if (!matched) throw new AppError("Invalid credentials", 401);
+    if (!matched)
+      throw new AppError("Invalid credentials", 401);
 
     const token = sign(
       { id: admin.id, role: admin.role, email: admin.email },

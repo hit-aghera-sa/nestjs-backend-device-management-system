@@ -80,8 +80,7 @@ export class EmployeesEditComponent implements OnInit {
       .subscribe({
         next: () => {
           this.saving.set(false);
-          this.successMessage.set('Employee updated successfully.');
-          setTimeout(() => this.successMessage.set(null), 3000);
+          this.router.navigate(['/employees']);
         },
         error: (err) => {
           this.saving.set(false);
@@ -92,7 +91,7 @@ export class EmployeesEditComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/employees/view', this.employeeId]);
+    this.router.navigate(['/employees/']);
   }
 
   get fullName() { return this.form.get('fullName'); }

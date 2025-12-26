@@ -15,6 +15,7 @@
   "dependencies": {
     "@nestjs/common": "^11.1.10",
     "@nestjs/core": "^11.1.10",
+    "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/platform-express": "^11.1.10",
     "@nestjs/typeorm": "^11.0.0",
     "bcrypt": "^6.0.0",

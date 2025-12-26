@@ -1,11 +1,20 @@
-import AssignmentRepository from "./assignment.repository";
-import EmployeeRepository from "../employee/employee.repository";
-import DeviceRepository from "../device/device.repository";
-import AppError from "../../core/errors/AppError";
-import { DeviceStatus } from "../device/device.entity";
-import { Like, Between } from "typeorm";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like, Between } from 'typeorm';
 
+import AssignmentRepository from './assignment.repository';
+import DeviceRepository from '../device/device.repository';
+import AppError from '../../core/errors/AppError';
+import { DeviceStatus } from '../device/device.entity';
+import { Employee } from '../employee/employee.entity';
+
+@Injectable()
 export class AssignmentService {
+  constructor(
+    @InjectRepository(Employee)
+    private readonly employeeRepo: Repository<Employee>,
+  ) {}
+
   async assignDevice(data: {
     employeeId: string;
     deviceId: string;
@@ -14,19 +23,23 @@ export class AssignmentService {
   }) {
     const { employeeId, deviceId, notes, expectedReturnDate } = data;
 
-    const employee = await EmployeeRepository.findById(employeeId);
-    if (!employee) throw new AppError("Employee not found", 404);
+    // 🔥 REPLACED — now uses TypeORM repo
+    const employee = await this.employeeRepo.findOne({
+      where: { id: employeeId },
+    });
+
+    if (!employee) throw new AppError('Employee not found', 404);
     if (!employee.isVerified) {
       throw new AppError(
-        "Employee must verify email before assignment",
-        400
+        'Employee must verify email before assignment',
+        400,
       );
     }
 
     const device = await DeviceRepository.findById(deviceId);
-    if (!device) throw new AppError("Device not found", 404);
-    if (device.status !== "AVAILABLE") {
-      throw new AppError("Device is not available for assignment", 400);
+    if (!device) throw new AppError('Device not found', 404);
+    if (device.status !== 'AVAILABLE') {
+      throw new AppError('Device is not available for assignment', 400);
     }
 
     const existingEmployeeAssignment =
@@ -34,8 +47,8 @@ export class AssignmentService {
 
     if (existingEmployeeAssignment) {
       throw new AppError(
-        "This employee already has an active assigned device",
-        400
+        'This employee already has an active assigned device',
+        400,
       );
     }
 
@@ -52,7 +65,7 @@ export class AssignmentService {
         : null,
     });
 
-    await DeviceRepository.update(deviceId, { status: "ASSIGNED" });
+    await DeviceRepository.update(deviceId, { status: 'ASSIGNED' });
 
     return assignment;
   }
@@ -60,17 +73,17 @@ export class AssignmentService {
   async returnDevice(
     assignmentId: string,
     notes: string,
-    deviceStatus: DeviceStatus
+    deviceStatus: DeviceStatus,
   ) {
     const assignment = await AssignmentRepository.findById(assignmentId);
-    if (!assignment) throw new AppError("Assignment not found", 404);
+    if (!assignment) throw new AppError('Assignment not found', 404);
 
-    if (assignment.status !== "ASSIGNED") {
-      throw new AppError("This assignment is already returned", 400);
+    if (assignment.status !== 'ASSIGNED') {
+      throw new AppError('This assignment is already returned', 400);
     }
 
     if (!assignment.device || !assignment.device.id) {
-      throw new AppError("Unable to extract device ID", 500);
+      throw new AppError('Unable to extract device ID', 500);
     }
 
     const updatedAssignment =
@@ -85,56 +98,41 @@ export class AssignmentService {
 
   async getAssignmentById(id: string) {
     const assignment = await AssignmentRepository.findById(id);
-    if (!assignment) throw new AppError("Assignment not found", 404);
+    if (!assignment) throw new AppError('Assignment not found', 404);
     return assignment;
   }
 
   async listAssignments(filter: any = {}) {
     const baseWhere: any = {};
 
-    // Status
     if (filter.status) baseWhere.status = filter.status;
 
-    // Date range
     if (filter.startDate || filter.endDate) {
       baseWhere.assignedAt = Between(
         filter.startDate ? new Date(filter.startDate) : new Date(0),
-        filter.endDate ? new Date(filter.endDate) : new Date()
+        filter.endDate ? new Date(filter.endDate) : new Date(),
       );
     }
 
     let where: any = baseWhere;
 
-    // ✅ STRICT $or PARITY WITH MONGOOSE
     if (filter.search) {
       where = [
-        {
-          ...baseWhere,
-          employeeName: Like(`%${filter.search}%`),
-        },
-        {
-          ...baseWhere,
-          deviceName: Like(`%${filter.search}%`),
-        },
-        {
-          ...baseWhere,
-          deviceCategory: Like(`%${filter.search}%`),
-        },
-        {
-          ...baseWhere,
-          notes: Like(`%${filter.search}%`),
-        },
+        { ...baseWhere, employeeName: Like(`%${filter.search}%`) },
+        { ...baseWhere, deviceName: Like(`%${filter.search}%`) },
+        { ...baseWhere, deviceCategory: Like(`%${filter.search}%`) },
+        { ...baseWhere, notes: Like(`%${filter.search}%`) },
       ];
     }
 
-    const page = parseInt(filter.page || "1", 10);
-    const limit = parseInt(filter.limit || "10", 10);
+    const page = parseInt(filter.page || '1', 10);
+    const limit = parseInt(filter.limit || '10', 10);
     const skip = (page - 1) * limit;
 
     const [data, total] = await AssignmentRepository.listAssignments(
       where,
       skip,
-      limit
+      limit,
     );
 
     return { data, total, page, limit };
@@ -142,16 +140,14 @@ export class AssignmentService {
 
   async deleteAssignment(id: string) {
     const assignment = await AssignmentRepository.findById(id);
-    if (!assignment) {
-      throw new AppError("Assignment not found", 404);
-    }
+    if (!assignment) throw new AppError('Assignment not found', 404);
 
     if (!assignment.device || !assignment.device.id) {
-      throw new AppError("Unable to extract device ID", 500);
+      throw new AppError('Unable to extract device ID', 500);
     }
 
     await DeviceRepository.update(assignment.device.id, {
-      status: "AVAILABLE",
+      status: 'AVAILABLE',
     });
 
     await AssignmentRepository.delete(id);
@@ -159,4 +155,3 @@ export class AssignmentService {
     return { deleted: true };
   }
 }
-

@@ -1,9 +1,9 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { IEmployee } from "../employee/employee.model";
+// import { IEmployee } from "../employee/employee.model";
 import { IDevice } from "../device/device.model";
 
 export interface IAssignment extends Document {
-  employee: mongoose.Types.ObjectId | IEmployee;
+  // employee: mongoose.Types.ObjectId | IEmployee;
   device: mongoose.Types.ObjectId | IDevice;
 
   employeeName?: string;
@@ -22,7 +22,7 @@ export interface IAssignment extends Document {
 
 const AssignmentSchema = new Schema<IAssignment>(
   {
-    employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
+    // employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
     device: { type: Schema.Types.ObjectId, ref: "Device", required: true },
 
     employeeName: { type: String },   

@@ -4,49 +4,55 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Index,
-} from "typeorm";
+  Index
+} from 'typeorm';
 
-@Entity({ name: "employees" })
+export enum EmployeeStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+}
+
+@Entity({ name: 'employees' })
 export class Employee {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: "varchar", length: 255 })
+  @Column({ type: 'varchar', length: 255 })
+  @Index()
   fullName!: string;
 
-  @Index({ unique: true })
-  @Column({ type: "varchar", length: 255 })
+  @Column({ type: 'varchar', length: 255, unique: true })
+  @Index()
   email!: string;
 
-  @Column({ type: "varchar", length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   department!: string;
 
-  @Column({ type: "varchar", length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   designation?: string | null;
 
-  @Column({ type: "varchar", length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   contactNumber?: string | null;
 
   @Column({
-    type: "enum",
-    enum: ["ACTIVE", "INACTIVE"],
-    default: "ACTIVE",
+    type: 'enum',
+    enum: EmployeeStatus,
+    default: EmployeeStatus.ACTIVE,
   })
-  status!: "ACTIVE" | "INACTIVE";
+  status!: EmployeeStatus;
 
-  @Column({ type: "boolean", default: false })
+  @Column({ type: 'boolean', default: false })
   isVerified!: boolean;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   verificationToken?: string | null;
 
-  @Column({ type: "timestamp", nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   verificationExpires?: Date | null;
 
-  @CreateDateColumn({ type: "timestamp" })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: "timestamp" })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
 }

@@ -18,7 +18,7 @@ export class AuthService {
   currentUser = computed(() => this.state().user);
 
   constructor() {
-    this.checkAuth();
+     this.loadAuthState();
   }
 
   // ---------------------------------------

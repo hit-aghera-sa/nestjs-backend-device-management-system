@@ -56,7 +56,7 @@
           </thead>
 
           <tbody class="divide-y divide-gray-200">
-            @for (admin of admins(); track admin._id) {
+            @for (admin of admins(); track admin.id) {
               <tr class="hover:bg-gray-50 transition-colors duration-150">
                 
                 <!-- ADMIN DETAILS -->
@@ -74,6 +74,7 @@
                 </td>
 
                 <!-- STATUS (FINAL FIX ✔️ Moved Activate inside Status column) -->
+                <!-- STATUS -->
                 <td class="py-4 px-6">
 
                   @if (admin.status === 'ACTIVE') {
@@ -81,21 +82,20 @@
                       Active
                     </span>
                   } @else {
-                    <button
-                      (click)="toggleStatus(admin)"
-                      class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors duration-200">
-                      Activate
-                    </button>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Deactive
+                    </span>
                   }
 
                 </td>
 
-                <!-- ACTIONS (Only View + Edit ✔️ No Activate Here) -->
+                <!-- ACTIONS -->
                 <td class="py-4 px-6">
                   <div class="flex items-center gap-2">
 
+                    <!-- View -->
                     <button
-                      (click)="viewAdmin(admin._id)"
+                      (click)="viewAdmin(admin.id)"
                       class="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -104,14 +104,32 @@
                       View
                     </button>
 
+                    <!-- Edit -->
                     <button
-                      (click)="editAdmin(admin._id)"
+                      (click)="editAdmin(admin.id)"
                       class="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-md transition-colors duration-200">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                       </svg>
                       Edit
                     </button>
+
+                    <!-- Toggle Status -->
+                    @if (admin.status === 'INACTIVE') {
+                      <button
+                        (click)="toggleStatus(admin)"
+                        class="inline-flex items-center px-3 py-1.5 text-sm bg-green-100 text-green-700 hover:bg-green-200 rounded-md transition-colors duration-200">
+                        Activate
+                      </button>
+                    }
+
+                    @if (admin.status === 'ACTIVE') {
+                      <button
+                        (click)="toggleStatus(admin)"
+                        class="inline-flex items-center px-3 py-1.5 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded-md transition-colors duration-200">
+                        Deactivate
+                      </button>
+                    }
 
                   </div>
                 </td>

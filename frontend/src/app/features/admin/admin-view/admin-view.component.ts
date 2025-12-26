@@ -1,8 +1,8 @@
+// src/app/features/admin/admin-view/admin-view.component.ts
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { AdminService } from '../../../core/services/admin.service';
 
 interface Admin {
   id: string;
@@ -25,8 +25,8 @@ interface Admin {
 export class AdminViewComponent implements OnInit {
 
   private route = inject(ActivatedRoute);
-  private http = inject(HttpClient);
   private router = inject(Router);
+  private adminService = inject(AdminService);
 
   admin = signal<Admin | null>(null);
   loading = signal(true);
@@ -44,18 +44,18 @@ export class AdminViewComponent implements OnInit {
   }
 
   // -------------------------------------------------------
-  // Convert backend admin → frontend Admin interface
+  // Map backend → frontend Admin model
   // -------------------------------------------------------
   private mapAdmin(data: any): Admin {
     return {
-      id: data._id || data.id,
+      id: data.id ?? data._id,
       fullName: data.fullName,
       email: data.email,
       role: data.role,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
       lastLogin: data.lastLogin || null,
-      status: data.isActive ? 'ACTIVE' : 'INACTIVE'  // backend uses isActive
+      status: data.isActive ? 'ACTIVE' : 'INACTIVE'
     };
   }
 
@@ -66,21 +66,19 @@ export class AdminViewComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.http.get<{ status: string; data: any }>(
-      `${environment.apiUrl}/auth/admins/${id}`
-    )
-    .subscribe({
-      next: (res) => {
-        this.admin.set(this.mapAdmin(res.data));
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(
-          err?.error?.message || 'Failed to load admin details.'
-        );
-        this.loading.set(false);
-      }
-    });
+    this.adminService.getAdminById(id)
+      .subscribe({
+        next: (res) => {
+          this.admin.set(this.mapAdmin(res.data));
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(
+            err?.error?.message || 'Failed to load admin details.'
+          );
+          this.loading.set(false);
+        }
+      });
   }
 
   // -------------------------------------------------------
@@ -92,47 +90,11 @@ export class AdminViewComponent implements OnInit {
 
   editAdmin(): void {
     const id = this.admin()?.id;
-    if (id) {
-      this.router.navigate([`/admin-management/edit/${id}`]);
-    }
+    if (id) this.router.navigate([`/admin-management/edit/${id}`]);
   }
 
   // -------------------------------------------------------
-  // Toggle ACTIVE <→ INACTIVE
-  // -------------------------------------------------------
-  toggleStatus(): void {
-    const admin = this.admin();
-    if (!admin) return;
-
-    if (admin.role === 'MASTER') {
-      this.errorMessage.set("Cannot change status of a MASTER admin.");
-      return;
-    }
-
-    const endpoint = admin.status === 'ACTIVE'
-      ? `${environment.apiUrl}/auth/admins/${admin.id}/deactivate`
-      : `${environment.apiUrl}/auth/admins/${admin.id}/activate`;
-
-    this.http.patch<{ status: string; data: any }>(endpoint, {})
-      .subscribe({
-        next: (res) => {
-          // If backend returns null, reload admin
-          if (!res.data) {
-            this.fetchAdmin(admin.id);
-            return;
-          }
-          this.admin.set(this.mapAdmin(res.data));
-        },
-        error: (err) => {
-          this.errorMessage.set(
-            err?.error?.message || 'Failed to update admin status.'
-          );
-        }
-      });
-  }
-
-  // -------------------------------------------------------
-  // Badge CSS helper
+  // Badge helper
   // -------------------------------------------------------
   getRoleBadge(role: string | undefined) {
     if (!role) return 'bg-gray-100 text-gray-500';

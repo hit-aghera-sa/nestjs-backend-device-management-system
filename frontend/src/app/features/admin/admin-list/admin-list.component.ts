@@ -2,11 +2,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { AdminService } from '../../../core/services/admin.service';
 
 interface Admin {
-  _id: string;
+  id: string;
   fullName: string;
   email: string;
   role: 'ADMIN' | 'MASTER';
@@ -24,7 +23,7 @@ interface Admin {
 })
 export class AdminListComponent implements OnInit {
 
-  private http = inject(HttpClient);
+  private adminService = inject(AdminService);
   public router = inject(Router);
 
   loading = signal(true);
@@ -40,7 +39,7 @@ export class AdminListComponent implements OnInit {
   // -------------------------------------------------------
   private mapAdmin(item: any): Admin {
     return {
-      _id: item._id,
+      id: item.id,
       fullName: item.fullName,
       email: item.email,
       role: item.role,
@@ -57,22 +56,20 @@ export class AdminListComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.http.get<{ status: string; data: any[] }>(
-      `${environment.apiUrl}/auth/admins`
-    )
-    .subscribe({
-      next: (response) => {
-        const mapped = response.data.map(a => this.mapAdmin(a));
-        this.admins.set(mapped);
-        this.loading.set(false);
-      },
-      error: (error) => {
-        this.errorMessage.set(
-          error?.error?.message || 'Failed to load admin list. Please try again.'
-        );
-        this.loading.set(false);
-      }
-    });
+    this.adminService.getAdmins()
+      .subscribe({
+        next: (response: any) => {
+          const mapped = response.data.items.map((a: any) => this.mapAdmin(a));
+          this.admins.set(mapped);
+          this.loading.set(false);
+        },
+        error: (error) => {
+          this.errorMessage.set(
+            error?.error?.message || 'Failed to load admin list. Please try again.'
+          );
+          this.loading.set(false);
+        }
+      });
   }
 
   reload(): void {
@@ -91,38 +88,32 @@ export class AdminListComponent implements OnInit {
   // ACTIVATE / DEACTIVATE ADMIN
   // -------------------------------------------------------
   toggleStatus(admin: Admin): void {
+
+    // still keep MASTER protection ✔
     if (admin.role === 'MASTER') {
-      alert("MASTER admin status cannot be changed.");
       return;
     }
 
-    const confirmMsg =
+    const request =
       admin.status === 'ACTIVE'
-        ? `Deactivate ${admin.fullName}?`
-        : `Activate ${admin.fullName}?`;
+        ? this.adminService.deactivate(admin.id)
+        : this.adminService.activate(admin.id);
 
-    if (!confirm(confirmMsg)) return;
+    request.subscribe({
+      next: (res: any) => {
+        const updated = this.mapAdmin(res.data);
 
-    const endpoint =
-      admin.status === 'ACTIVE'
-        ? `${environment.apiUrl}/auth/admins/${admin._id}/deactivate`
-        : `${environment.apiUrl}/auth/admins/${admin._id}/activate`;
+        const newList = this.admins().map(a =>
+          a.id === admin.id ? updated : a
+        );
 
-    this.http.patch<{ status: string; data: any }>(endpoint, {})
-      .subscribe({
-        next: (res) => {
-          const updated = this.mapAdmin(res.data);
-
-          const newList = this.admins().map(a =>
-            a._id === admin._id ? updated : a
-          );
-
-          this.admins.set(newList);
-        },
-        error: (error) => {
-          alert(error?.error?.message || 'Failed to update status.');
-        }
-      });
+        this.admins.set(newList);
+      },
+      error: () => {
+        // silently fail or toast later if you add UI alerts
+        console.error('Failed to update status');
+      }
+    });
   }
 
   // -------------------------------------------------------

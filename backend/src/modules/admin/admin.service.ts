@@ -1,49 +1,76 @@
 import bcrypt from "bcrypt";
-import { sign, Secret, SignOptions } from "jsonwebtoken";
+import { sign, Secret } from "jsonwebtoken";
 import crypto from "crypto";
-import AdminRepository from "./admin.repository";
 import AppError from "../../core/errors/AppError";
 import { jwtConfig } from "../../config/jwt.config";
 import { sendEmail } from "../../core/utils/email.util";
 import { logger } from "../../core/logger/logger";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Admin } from "./admin.entity";
+
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { UpdateAdminDto } from "./dto/update-admin.dto";
 
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export class AdminService {
-  async register(payload: {
-    fullName: string;
-    email: string;
-    password: string;
-  }) {
-    const existing = await AdminRepository.findByEmail(payload.email);
+  constructor(
+    @InjectRepository(Admin)
+    private readonly adminRepo: Repository<Admin>,
+  ) {}
+
+  // ---------------------------------------------------------
+  // REGISTER
+  // ---------------------------------------------------------
+  async register(dto: RegisterDto) {
+
+    const email = dto.email.toLowerCase().trim();
+
+    const existing = await this.adminRepo.findOne({
+      where: { email }
+    });
+
     if (existing) throw new AppError("Email already registered", 400);
 
-    const hashed = await bcrypt.hash(payload.password, 10);
+    const hashed = await bcrypt.hash(dto.password, 10);
 
-    const admin = await AdminRepository.create({
-      fullName: payload.fullName,
-      email: payload.email,
+    const admin = this.adminRepo.create({
+      fullName: dto.fullName.trim(),
+      email,
       password: hashed,
-      role: "ADMIN",
+      role: dto.role ?? "ADMIN",
       isVerified: false,
-      isActive: true,
+      isActive: true
     });
+
+    await this.adminRepo.save(admin);
 
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
 
-    await AdminRepository.setVerificationToken(admin.id, token, expires);
+    await this.adminRepo.update(
+      { id: admin.id },
+      {
+        verificationToken: token,
+        verificationExpires: expires
+      }
+    );
 
     try {
       const verifyLink = `${
         process.env.BACKEND_ORIGIN || "http://localhost:4000"
       }/api/auth/verify/${token}`;
 
-      const html = `<p>Hello ${admin.fullName},</p>
-        <p>Click below to verify your email (valid 24 hours):</p>
-        <a href="${verifyLink}">Verify Email</a>`;
-
-      await sendEmail(admin.email, "Verify your admin account", html);
+      await sendEmail(
+        admin.email,
+        "Verify your admin account",
+        `<p>Hello ${admin.fullName},</p>
+         <p>Click below to verify your email (valid 24 hours):</p>
+         <a href="${verifyLink}">Verify Email</a>`
+      );
     } catch (err) {
       logger.error("Failed to send verification email", err as Error);
     }
@@ -51,149 +78,171 @@ export class AdminService {
     return admin;
   }
 
-  async login(payload: { email: string; password: string }) {
-    console.log('Login attempt for email:', payload.email);
-    
-    const admin = await AdminRepository.findByEmail(payload.email);
-    console.log('Admin found:', admin ? 'YES' : 'NO');
+  // ---------------------------------------------------------
+  // LOGIN
+  // ---------------------------------------------------------
+  async login(dto: LoginDto) {
 
-    if (!admin) {
+    const email = dto.email.toLowerCase().trim();
+
+    const admin = await this.adminRepo.findOne({
+      where: { email }
+    });
+
+    if (!admin || !admin.isActive)
       throw new AppError("Admin does not exist", 404);
-    }
 
-    if (admin.isActive !== true) {
-      throw new AppError("Admin does not exist", 404);
-    }
-
-    if (!admin.isVerified) {
+    if (!admin.isVerified)
       throw new AppError("Please verify your email before login", 401);
-    }
 
-    console.log('Checking password...');
-    const matched = await bcrypt.compare(payload.password, admin.password);
-    console.log('Password matched:', matched);
-    
-    if (!matched) {
-      throw new AppError("Invalid credentials", 401);
-    }
-
-    console.log('Generating JWT token...');
-    const jwtSecret: Secret = jwtConfig.secret;
-
-    const options: SignOptions = {
-      expiresIn: jwtConfig.expiresIn as any,
-    };
+    const matched = await bcrypt.compare(dto.password, admin.password);
+    if (!matched) throw new AppError("Invalid credentials", 401);
 
     const token = sign(
       { id: admin.id, role: admin.role, email: admin.email },
-      jwtSecret,
-      options
+      jwtConfig.secret as Secret,
+      { expiresIn: jwtConfig.expiresIn as any }
     );
 
-    console.log('Login successful');
     return { admin, token };
   }
 
+  // ---------------------------------------------------------
+  // VERIFY EMAIL
+  // ---------------------------------------------------------
   async verifyEmail(token: string) {
-    const record = await AdminRepository.findByVerificationToken(token);
-    if (!record) throw new AppError("Invalid verification token", 400);
+    const admin = await this.adminRepo.findOne({
+      where: { verificationToken: token }
+    });
 
-    if (
-      !record.verificationExpires ||
-      record.verificationExpires < new Date()
-    ) {
+    if (!admin) throw new AppError("Invalid verification token", 400);
+
+    if (!admin.verificationExpires || admin.verificationExpires < new Date())
       throw new AppError("Verification token expired", 400);
-    }
 
-    await AdminRepository.markVerified(record.id);
+    await this.adminRepo.update(
+      { id: admin.id },
+      {
+        isVerified: true,
+        verificationToken: null,
+        verificationExpires: null
+      }
+    );
+
     return true;
   }
 
+  // ---------------------------------------------------------
+  // RESEND VERIFICATION
+  // ---------------------------------------------------------
   async resendVerification(email: string) {
-    const admin = await AdminRepository.findByEmail(email);
+
+    email = email.toLowerCase().trim();
+
+    const admin = await this.adminRepo.findOne({ where: { email } });
+
     if (!admin) throw new AppError("Admin not found", 404);
     if (admin.isVerified) throw new AppError("Account already verified", 400);
 
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
 
-    await AdminRepository.setVerificationToken(admin.id, token, expires);
-
-    try {
-      const verifyLink = `${
-        process.env.FRONTEND_ORIGIN || "http://localhost:4200"
-      }/verify-email?token=${token}`;
-
-      const html = `<p>Hello ${admin.fullName},</p>
-        <p>Click below to verify your email (valid 24 hours):</p>
-        <a href="${verifyLink}">Verify Email</a>`;
-
-      await sendEmail(admin.email, "Verify your admin account", html);
-    } catch (err) {
-      logger.error("Failed to send verification email", err as Error);
-    }
+    await this.adminRepo.update(
+      { id: admin.id },
+      {
+        verificationToken: token,
+        verificationExpires: expires
+      }
+    );
 
     return true;
   }
 
+  // ---------------------------------------------------------
+  // CURRENT ADMIN
+  // ---------------------------------------------------------
   async getCurrentAdmin(id: string) {
-    const admin = await AdminRepository.findById(id);
+    const admin = await this.adminRepo.findOne({ where: { id } });
     if (!admin) throw new AppError("Admin not found", 404);
     return admin;
   }
 
-  async updateProfile(
-    id: string,
-    data: { fullName?: string; email?: string }
-  ) {
-    const updated = await AdminRepository.update(id, data);
-    if (!updated) throw new AppError("Admin not found", 404);
-    return updated;
+  // ---------------------------------------------------------
+  // PROFILE UPDATE
+  // ---------------------------------------------------------
+  async updateProfile(id: string, dto: UpdateProfileDto) {
+    await this.adminRepo.update({ id }, dto);
+    return this.getCurrentAdmin(id);
   }
 
-  async changePassword(
-    id: string,
-    oldPassword: string,
-    newPassword: string
-  ) {
-    const admin = await AdminRepository.findById(id);
+  // ---------------------------------------------------------
+  // CHANGE PASSWORD
+  // ---------------------------------------------------------
+  async changePassword(id: string, oldPassword: string, newPassword: string) {
+    const admin = await this.adminRepo.findOne({ where: { id } });
     if (!admin) throw new AppError("Admin not found", 404);
 
     const match = await bcrypt.compare(oldPassword, admin.password);
     if (!match) throw new AppError("Old password is incorrect", 400);
 
     const hashed = await bcrypt.hash(newPassword, 10);
-    await AdminRepository.updatePassword(id, hashed);
+
+    await this.adminRepo.update({ id }, { password: hashed });
 
     return true;
   }
 
-  // Master admin management
-  async getAllAdmins() {
-    return AdminRepository.findAll();
+  // ---------------------------------------------------------
+  // LIST ADMINS (PAGINATION)
+  // ---------------------------------------------------------
+  async getAllAdmins(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.adminRepo.findAndCount({
+      skip,
+      take: limit,
+      order: { createdAt: "DESC" }
+    });
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
+  // ---------------------------------------------------------
+  // GET ADMIN
+  // ---------------------------------------------------------
   async getAdminById(id: string) {
-    const admin = await AdminRepository.findById(id);
+    const admin = await this.adminRepo.findOne({ where: { id } });
     if (!admin) throw new AppError("Admin not found", 404);
     return admin;
   }
 
-  async updateAdmin(id: string, data: any) {
-    const updated = await AdminRepository.update(id, data);
-    if (!updated) throw new AppError("Admin not found", 404);
-    return updated;
+  // ---------------------------------------------------------
+  // UPDATE ADMIN
+  // ---------------------------------------------------------
+  async updateAdmin(id: string, dto: UpdateAdminDto) {
+    await this.adminRepo.update({ id }, dto);
+    return this.getAdminById(id);
   }
 
+  // ---------------------------------------------------------
+  // DEACTIVATE
+  // ---------------------------------------------------------
   async deactivateAdmin(id: string) {
-    const admin = await AdminRepository.update(id, { isActive: false });
-    if (!admin) throw new AppError("Admin not found", 404);
-    return admin;
+    await this.adminRepo.update({ id }, { isActive: false });
+    return this.getAdminById(id);
   }
 
+  // ---------------------------------------------------------
+  // ACTIVATE
+  // ---------------------------------------------------------
   async activateAdmin(id: string) {
-    const admin = await AdminRepository.update(id, { isActive: true });
-    if (!admin) throw new AppError("Admin not found", 404);
-    return admin;
+    await this.adminRepo.update({ id }, { isActive: true });
+    return this.getAdminById(id);
   }
 }

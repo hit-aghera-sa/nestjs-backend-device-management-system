@@ -1,9 +1,9 @@
+// src/app/features/admin/admin-create/admin-create.component.ts
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
+import { AdminService } from '../../../core/services/admin.service';
 
 @Component({
   selector: 'app-admin-create',
@@ -15,7 +15,7 @@ import { environment } from '../../../../environments/environment';
 export class AdminCreateComponent {
 
   private fb = inject(FormBuilder);
-  private http = inject(HttpClient);
+  private adminService = inject(AdminService);
   private router = inject(Router);
 
   adminForm: FormGroup;
@@ -53,16 +53,16 @@ export class AdminCreateComponent {
 
     const payload = this.adminForm.value;
 
-    this.http.post(`${environment.apiUrl}/auth/register`, payload)
+    this.adminService.register(payload)
       .subscribe({
         next: () => {
           this.loading.set(false);
           this.successMessage.set('Admin created successfully. Verification email sent.');
 
-          // Reset form for fresh entry:
+          // Reset form for fresh entry
           this.adminForm.reset({ role: 'ADMIN' });
 
-          // ⭐ Redirect to admin list
+          // Redirect to admin list
           this.router.navigate(['/admin-management']);
         },
 
@@ -73,8 +73,6 @@ export class AdminCreateComponent {
             error?.message ||
             'Failed to create admin. Please try again.'
           );
-
-          this.clearMessagesAfterDelay();
         }
       });
   }
@@ -84,13 +82,6 @@ export class AdminCreateComponent {
   // -------------------------------------------------------
   private markAllAsTouched(): void {
     Object.values(this.adminForm.controls).forEach(control => control.markAsTouched());
-  }
-
-  private clearMessagesAfterDelay(): void {
-    setTimeout(() => {
-      this.successMessage.set(null);
-      this.errorMessage.set(null);
-    }, 5000);
   }
 
   // -------------------------------------------------------

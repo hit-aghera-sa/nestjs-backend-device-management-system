@@ -1,16 +1,16 @@
+// src/app/features/admin/admin-edit/admin-edit.component.ts
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { AdminService } from '../../../core/services/admin.service';
 
 interface Admin {
-  _id: string;  // backend returns _id
+  id: string;
   fullName: string;
   email: string;
   role: 'ADMIN' | 'MASTER';
-  isActive: boolean;   // backend field
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,9 +25,9 @@ interface Admin {
 export class AdminEditComponent implements OnInit {
 
   private route = inject(ActivatedRoute);
-  private http = inject(HttpClient);
   private router = inject(Router);
   private fb = inject(FormBuilder);
+  private adminService = inject(AdminService);
 
   adminId = '';
   adminForm!: FormGroup;
@@ -36,7 +36,6 @@ export class AdminEditComponent implements OnInit {
   loading = signal(true);
   saving = signal(false);
   errorMessage = signal<string | null>(null);
-  successMessage = signal<string | null>(null);
 
   roles = [
     { value: 'ADMIN', label: 'Administrator' },
@@ -61,33 +60,30 @@ export class AdminEditComponent implements OnInit {
   fetchAdmin(id: string): void {
     this.loading.set(true);
 
-    this.http.get<{ status: string; data: any }>(
-      `${environment.apiUrl}/auth/admins/${id}`
-    )
-    .subscribe({
-      next: (res) => {
-        const adminData = res.data;
+    this.adminService.getAdminById(id)
+      .subscribe({
+        next: (res: any) => {
+          const a = res.data;
 
-        // Ensure proper backend → frontend mapping
-        const mappedAdmin: Admin = {
-          _id: adminData._id,
-          fullName: adminData.fullName,
-          email: adminData.email,
-          role: adminData.role,
-          isActive: !!adminData.isActive,  // backend uses isActive
-          createdAt: adminData.createdAt,
-          updatedAt: adminData.updatedAt
-        };
+          const mapped: Admin = {
+            id: a.id,
+            fullName: a.fullName,
+            email: a.email,
+            role: a.role,
+            isActive: !!a.isActive,
+            createdAt: a.createdAt,
+            updatedAt: a.updatedAt
+          };
 
-        this.admin.set(mappedAdmin);
-        this.prepareForm(mappedAdmin);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(err?.error?.message || 'Failed to load admin details.');
-        this.loading.set(false);
-      }
-    });
+          this.admin.set(mapped);
+          this.prepareForm(mapped);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(err?.error?.message || 'Failed to load admin details.');
+          this.loading.set(false);
+        }
+      });
   }
 
   // -------------------------------------------------------
@@ -113,22 +109,17 @@ export class AdminEditComponent implements OnInit {
     this.saving.set(true);
     this.errorMessage.set(null);
 
-    this.http.patch(
-      `${environment.apiUrl}/auth/admins/${this.adminId}`,
-      this.adminForm.value
-    )
-    .subscribe({
-      next: () => {
-        this.saving.set(false);
-
-        // Redirect immediately after update
-        this.router.navigate(['/admin-management']);
-      },
-      error: (err) => {
-        this.saving.set(false);
-        this.errorMessage.set(err?.error?.message || 'Failed to update admin.');
-      }
-    });
+    this.adminService.updateAdmin(this.adminId, this.adminForm.value)
+      .subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.router.navigate(['/admin-management']);
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.errorMessage.set(err?.error?.message || 'Failed to update admin.');
+        }
+      });
   }
 
   goBack(): void {

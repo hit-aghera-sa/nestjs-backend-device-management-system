@@ -48,17 +48,6 @@
           >
             Edit
           </button>
-
-          @if (admin()?.role !== 'MASTER') {
-            <button
-              (click)="toggleStatus()"
-              [class]="admin()?.status === 'ACTIVE'
-                ? 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700'
-                : 'px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700'"
-            >
-              {{ admin()?.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}
-            </button>
-          }
         </div>
       </div>
 

@@ -1,83 +1,66 @@
-import { Controller, Post, Get, Patch, Put, Delete, Param, Body, Req, Res } from "@nestjs/common";
-import { Request, Response, NextFunction } from "express";
-import { DeviceService } from "./device.service";
-import { successResponse } from "../../core/utils/response.util";
+import { Query, Controller, Get, Post, Patch, Put, Delete, Param, Body } from '@nestjs/common';
+import { DeviceService } from './device.service';
+import { successResponse } from '../../core/utils/response.util';
 
-@Controller("device")
+import { CreateDeviceDto } from './dto/create-device.dto';
+import { UpdateDeviceDto } from './dto/update-device.dto';
+import { UpdateDeviceStatusDto } from './dto/update-device-status.dto';
+import { ListDevicesDto } from './dto/list-devices.dto';
+
+@Controller('devices')
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}
 
+  // CREATE
   @Post()
-  async createDevice(req: Request, res: Response, next: NextFunction) {
-    try {
-      const device = await this.deviceService.createDevice(req.body);
-      return res
-        .status(201)
-        .json(successResponse(device, "Device created successfully"));
-    } catch (err) {
-      next(err);
-    }
+  async createDevice(@Body() dto: CreateDeviceDto) {
+    const device = await this.deviceService.createDevice(dto);
+
+    return successResponse(device, 'Device created successfully');
   }
 
+  // LIST
   @Get()
-  async getDevices(req: Request, res: Response, next: NextFunction) {
-    try {
-      const list = await this.deviceService.listDevices(req.query);
-      return res.status(200).json(successResponse(list));
-    } catch (err) {
-      next(err);
-    }
+  async getDevices(@Query() query: ListDevicesDto) {
+    const list = await this.deviceService.listDevices(query);
+    return successResponse(list);
   }
 
-  @Get(":id")
-  async getDeviceById(req: Request, res: Response, next: NextFunction) {
-    try {
-      const device = await this.deviceService.getDeviceById(req.params.id);
-      return res.status(200).json(successResponse(device));
-    } catch (err) {
-      next(err);
-    }
+  // GET BY ID
+  @Get(':id')
+  async getDeviceById(@Param('id') id: string) {
+    const device = await this.deviceService.getDeviceById(id);
+
+    return successResponse(device);
   }
 
-  @Put(":id")
-  async updateDevice(req: Request, res: Response, next: NextFunction) {
-    try {
-      const updated = await this.deviceService.updateDevice(
-        req.params.id,
-        req.body
-      );
-      return res
-        .status(200)
-        .json(successResponse(updated, "Device updated successfully"));
-    } catch (err) {
-      next(err);
-    }
+  // UPDATE FULL DEVICE
+  @Put(':id')
+  async updateDevice(
+    @Param('id') id: string,
+    @Body() dto: UpdateDeviceDto,
+  ) {
+    const updated = await this.deviceService.updateDevice(id, dto);
+
+    return successResponse(updated, 'Device updated successfully');
   }
 
-  @Patch(":id/status")
-  async updateStatus(req: Request, res: Response, next: NextFunction) {
-    try {
-      const updated = await this.deviceService.updateStatus(
-        req.params.id,
-        req.body.status
-      );
-      return res
-        .status(200)
-        .json(successResponse(updated, "Device status updated successfully"));
-    } catch (err) {
-      next(err);
-    }
+  // UPDATE STATUS
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateDeviceStatusDto,
+  ) {
+    const updated = await this.deviceService.updateStatus(id, dto.status);
+
+    return successResponse(updated, 'Device status updated successfully');
   }
 
-  @Delete(":id")
-  async deleteDevice(req: Request, res: Response, next: NextFunction) {
-    try {
-      await this.deviceService.deleteDevice(req.params.id);
-      return res
-        .status(200)
-        .json(successResponse(null, "Device deleted successfully"));
-    } catch (err) {
-      next(err);
-    }
+  // DELETE
+  @Delete(':id')
+  async deleteDevice(@Param('id') id: string) {
+    await this.deviceService.deleteDevice(id);
+
+    return successResponse(null, 'Device deleted successfully');
   }
 }

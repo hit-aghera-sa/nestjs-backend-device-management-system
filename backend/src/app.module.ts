@@ -5,7 +5,7 @@ import { AppDataSource } from "./config/typeorm.config";
 import { AdminModule } from "./modules/admin/admin.module";
 import { EmployeeModule } from "./modules/employee/employee.module";
 import { DeviceModule } from "./modules/device/device.module";
-import { AssignmentModule } from "./modules/assignment/assignment.module";
+// import { AssignmentModule } from "./modules/assignment/assignment.module";
 import { DashboardModule } from "./modules/dashboard/dashboard.module";
 import { StockModule } from "./modules/stock/stock.module";
 
@@ -17,7 +17,7 @@ import { StockModule } from "./modules/stock/stock.module";
     AdminModule,
     EmployeeModule,
     DeviceModule,
-    AssignmentModule,
+    // AssignmentModule,
     DashboardModule,
     StockModule
   ],

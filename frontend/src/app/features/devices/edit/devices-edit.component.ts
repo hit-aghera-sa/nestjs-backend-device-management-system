@@ -37,9 +37,18 @@ export class DeviceEditComponent implements OnInit {
     'other'
   ];
 
+  // 🔹 Allowed statuses (same as backend)
+  statuses = [
+    'AVAILABLE',
+    'DAMAGED',
+    'MAINTENANCE'
+  ];
+
+  // 🔹 status added here
   deviceForm: FormGroup = this.fb.group({
     deviceName: ['', [Validators.required, Validators.minLength(2)]],
     category: ['', [Validators.required]],
+    status: ['', [Validators.required]],
     brand: [''],
     modelNumber: [''],
     serialNumber: ['', [Validators.required, Validators.minLength(2)]],
@@ -61,9 +70,11 @@ export class DeviceEditComponent implements OnInit {
       next: (res) => {
         const d = res.data;
 
+        // 🔹 status patched here
         this.deviceForm.patchValue({
           deviceName: d.deviceName,
           category: d.category,
+          status: d.status,
           brand: d.brand,
           modelNumber: d.modelNumber,
           serialNumber: d.serialNumber,
@@ -92,7 +103,15 @@ export class DeviceEditComponent implements OnInit {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    this.deviceService.updateDevice(this.deviceId, this.deviceForm.value)
+    // 🔹 status included automatically because it's in the form
+    const payload = {
+      ...this.deviceForm.value,
+      purchasePrice: this.deviceForm.value.purchasePrice
+        ? Number(this.deviceForm.value.purchasePrice)
+        : null,
+    };
+
+    this.deviceService.updateDevice(this.deviceId, payload)
       .subscribe({
         next: () => {
           this.saving.set(false);

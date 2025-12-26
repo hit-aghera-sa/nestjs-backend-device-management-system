@@ -6,7 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 import { DeviceService } from '../../../core/services/device.service';
 
 export interface Device {
-  _id: string;
+  id: string;
   deviceName: string;
   category: string;
   brand?: string;
@@ -44,6 +44,9 @@ export class DevicesListComponent implements OnInit {
   categoryFilter = signal('');
   statusFilter = signal('');
   brandFilter = signal('');
+
+  showDeleteConfirm = false;
+  deviceToDeleteId: string | null = null;
 
   // Dynamic categories (optional)
   categories = ['laptop', 'moniter', 'tablet', 'keyboard', 'mouse', 'mobile', 'printer', 'headphone'];
@@ -99,7 +102,7 @@ export class DevicesListComponent implements OnInit {
   }
 
   deleteDevice(device: Device) {
-    this.deviceService.deleteDevice(device._id).subscribe({
+    this.deviceService.deleteDevice(device.id).subscribe({
       next: () => this.fetchDevices(),
       error: (err: any) =>
         alert(err?.error?.message || 'Failed to delete device.')
@@ -127,5 +130,31 @@ export class DevicesListComponent implements OnInit {
       this.page.update(v => v - 1);
       this.fetchDevices();
     }
+  }
+
+  confirmDelete(device: Device) {
+    this.deviceToDeleteId = device.id;
+    this.showDeleteConfirm = true;
+  }
+
+  deleteConfirmed() {
+    if (!this.deviceToDeleteId) return;
+
+    this.deviceService.deleteDevice(this.deviceToDeleteId).subscribe({
+      next: () => {
+        this.showDeleteConfirm = false;
+        this.deviceToDeleteId = null;
+        this.fetchDevices();
+      },
+      error: () => {
+        this.showDeleteConfirm = false;
+        this.deviceToDeleteId = null;
+      }
+    });
+  }
+
+  cancelDelete() {
+    this.showDeleteConfirm = false;
+    this.deviceToDeleteId = null;
   }
 }

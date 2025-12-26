@@ -65,27 +65,4 @@ export class DeviceViewComponent implements OnInit {
   goBack() {
     this.router.navigate(['/devices']);
   }
-
-  // ✅ FIXED: Update device status
-  updateStatus() {
-    this.statusError.set(null);
-    this.statusSuccess.set(null);
-    this.statusLoading.set(true);
-
-    // Your service method is updateStatus(), not updateDeviceStatus()
-    this.deviceService.updateDeviceStatus(this.deviceId, this.selectedStatus)
-      .subscribe({
-        next: () => {
-          this.statusSuccess.set('Device status updated successfully.');
-          this.device().status = this.selectedStatus; // instant UI update
-          this.statusLoading.set(false);
-
-        },
-        error: (err) => {
-          this.statusError.set(err?.error?.message || 'Failed to update status.');
-          this.statusLoading.set(false);
-
-        }
-      });
-  }
 }

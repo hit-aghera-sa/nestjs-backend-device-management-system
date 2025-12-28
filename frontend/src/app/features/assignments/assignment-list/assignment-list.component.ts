@@ -1,5 +1,3 @@
-// src/app/features/assignments/assignment-list/assignment-list.component.ts
-
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -39,7 +37,6 @@ export class AssignmentListComponent implements OnInit {
   private http = inject(HttpClient);
   public router = inject(Router);
 
-  // Pagination
   page = 1;
   limit = 10;
   total = 0;
@@ -48,7 +45,6 @@ export class AssignmentListComponent implements OnInit {
   assignments = signal<Assignment[]>([]);
   errorMessage = signal<string | null>(null);
 
-  // Filters
   filters = {
     status: '',
     employee: '',
@@ -62,9 +58,6 @@ export class AssignmentListComponent implements OnInit {
     this.fetchAssignments();
   }
 
-  // -------------------------------------------------------
-  // Fetch Assignments
-  // -------------------------------------------------------
   fetchAssignments(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
@@ -74,7 +67,6 @@ export class AssignmentListComponent implements OnInit {
       limit: this.limit,
     };
 
-    // Add active filters
     if (this.filters.status) params.status = this.filters.status;
     if (this.filters.employee) params.employee = this.filters.employee;
     if (this.filters.category) params.deviceCategory = this.filters.category;
@@ -82,31 +74,30 @@ export class AssignmentListComponent implements OnInit {
     if (this.filters.endDate) params.endDate = this.filters.endDate;
     if (this.filters.search) params.search = this.filters.search;
 
-    this.http
-      .get<{
-        status: string;
-        data: any[];
-        total: number;
-        page: number;
-        limit: number;
-      }>(`${environment.apiUrl}/assignments`, { params })
+    this.http.get<{
+      status: string;
+      data: any[];
+      total: number;
+      page: number;
+      limit: number;
+    }>(`${environment.apiUrl}/assignments`, { params })
       .subscribe({
         next: (response) => {
-          // Update pagination
+
           this.total = response.total ?? 0;
           this.page = response.page ?? this.page;
           this.limit = response.limit ?? this.limit;
 
-          // Map to UI-friendly structure
+          // 🔥 UPDATED — use `id` not `_id`
           const mapped = response.data.map((a: any) => ({
-            id: a._id,
+            id: a.id,
             employee: {
-              id: a.employee?._id,
+              id: a.employee?.id,
               fullName: a.employee?.fullName,
               department: a.employee?.department,
             },
             device: {
-              id: a.device?._id,
+              id: a.device?.id,
               deviceName: a.device?.deviceName,
               model: a.device?.modelNumber,
               serialNumber: a.device?.serialNumber,
@@ -129,9 +120,6 @@ export class AssignmentListComponent implements OnInit {
       });
   }
 
-  // -------------------------------------------------------
-  // Filters & Search
-  // -------------------------------------------------------
   applyFilters() {
     this.page = 1;
     this.fetchAssignments();
@@ -145,9 +133,6 @@ export class AssignmentListComponent implements OnInit {
     this.router.navigate([`/assignments/view/${id}`]);
   }
 
-  // -------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------
   formatDate(dateString: string | null): string {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -177,8 +162,7 @@ export class AssignmentListComponent implements OnInit {
 
     this.http.delete(`${environment.apiUrl}/assignments/${id}`).subscribe({
       next: () => {
-        const updated = this.assignments().filter((a) => a.id !== id);
-        this.assignments.set(updated);
+        this.assignments.set(this.assignments().filter(a => a.id !== id));
         this.loading.set(false);
       },
       error: (err) => {
@@ -188,9 +172,6 @@ export class AssignmentListComponent implements OnInit {
     });
   }
 
-  // -------------------------------------------------------
-  // Pagination
-  // -------------------------------------------------------
   totalPages() {
     return Math.ceil(this.total / this.limit);
   }
@@ -209,9 +190,6 @@ export class AssignmentListComponent implements OnInit {
     }
   }
 
-  // -------------------------------------------------------
-  // History Redirect
-  // -------------------------------------------------------
   openHistory() {
     this.router.navigate(['/assignments/history']);
   }

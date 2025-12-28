@@ -1,4 +1,3 @@
-// src/app/features/assignments/assignment-create/assignment-create.component.ts
 
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';

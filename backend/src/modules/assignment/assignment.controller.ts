@@ -1,94 +1,116 @@
-// import { Controller, Post, Get, Delete, Param } from "@nestjs/common";
-// import { Request, Response, NextFunction } from "express";
-// // import { AssignmentService } from "./assignment.service";
-// import { successResponse } from "../../core/utils/response.util";
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Param,
+  Body,
+  Query,
+} from '@nestjs/common';
 
-// @Controller("assignment")
-// export class AssignmentController {
-//   constructor(private readonly assignmentService: AssignmentService) {}
+import { AssignmentService } from './assignment.service';
+import { successResponse } from '../../core/utils/response.util';
+import { DeviceStatus } from '../device/device.entity';
 
-//   @Post()
-//   async assignDevice(req: Request, res: Response, next: NextFunction) {
-//     try {
-//       const assignment = await this.assignmentService.assignDevice(req.body);
-//       return res
-//         .status(201)
-//         .json(successResponse(assignment, "Device assigned successfully"));
-//     } catch (err) {
-//       next(err);
-//     }
-//   }
+@Controller('assignments')
+export class AssignmentController {
+  constructor(private readonly assignmentService: AssignmentService) {}
 
-//   @Post(":id/return")
-//   async returnDevice(req: Request, res: Response, next: NextFunction) {
-//     try {
-//       const { id } = req.params;
-//       const { notes, deviceStatus } = req.body;
+  // -------------------------------
+  // ASSIGN DEVICE
+  // -------------------------------
+  @Post()
+  async assignDevice(
+    @Body()
+    body: {
+      employeeId: string;
+      deviceId: string;
+      notes?: string;
+      expectedReturnDate?: string | Date | null;
+    },
+  ) {
+    const assignment = await this.assignmentService.assignDevice(body);
 
-//       const updated = await this.assignmentService.returnDevice(
-//         id,
-//         notes,
-//         deviceStatus
-//       );
+    return successResponse(
+      assignment,
+      'Device assigned successfully',
+    );
+  }
 
-//       return res
-//         .status(200)
-//         .json(successResponse(updated, "Device returned successfully"));
-//     } catch (err) {
-//       next(err);
-//     }
-//   }
+  // -------------------------------
+  // RETURN DEVICE
+  // -------------------------------
+  @Post(':id/return')
+  async returnDevice(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      notes: string;
+      deviceStatus: DeviceStatus;
+    },
+  ) {
+    const updated = await this.assignmentService.returnDevice(
+      id,
+      body.notes,
+      body.deviceStatus,
+    );
 
-//   @Get(":id")
-//   async getAssignmentById(req: Request, res: Response, next: NextFunction) {
-//     try {
-//       const { id } = req.params;
-//       const result = await this.assignmentService.deleteAssignment(id);
-//       return res.status(200).json(successResponse(result));
-//     } catch (err) {
-//       next(err);
-//     }
-//   }
+    return successResponse(
+      updated,
+      'Device returned successfully',
+    );
+  }
 
-//   @Get()
-//   async listAssignments(req: Request, res: Response, next: NextFunction) {
-//     try {
-//       const filter: any = {
-//         status: req.query.status,
-//         employee: req.query.employee,
-//         deviceCategory: req.query.deviceCategory,
-//         startDate: req.query.startDate,
-//         endDate: req.query.endDate,
-//         search: req.query.search,
-//         page: req.query.page,
-//         limit: req.query.limit,
-//       };
+  // -------------------------------
+  // GET ASSIGNMENT BY ID
+  // -------------------------------
+  @Get(':id')
+  async getAssignmentById(@Param('id') id: string) {
+    const assignment =
+      await this.assignmentService.getAssignmentById(id);
 
-//       const result = await this.assignmentService.listAssignments(filter);
+    return successResponse(assignment);
+  }
 
-//       return res.status(200).json(
-//         successResponse({
-//           data: result.data,
-//           total: result.total,
-//           page: result.page,
-//           limit: result.limit,
-//         })
-//       );
-//     } catch (err) {
-//       next(err);
-//     }
-//   }
+  // -------------------------------
+  // LIST ASSIGNMENTS
+  // -------------------------------
+  @Get()
+  async listAssignments(
+    @Query()
+    query: {
+      status?: string;
+      employee?: string;
+      deviceCategory?: string;
+      startDate?: string;
+      endDate?: string;
+      search?: string;
+      page?: string;
+      limit?: string;
+    },
+  ) {
+    const result =
+      await this.assignmentService.listAssignments(query);
 
-//   @Delete(":id")
-//   async deleteAssignment(req: Request, res: Response, next: NextFunction) {
-//     try {
-//       const { id } = req.params;
-//       const result = await this.assignmentService.deleteAssignment(id);
-//       return res
-//         .status(200)
-//         .json(successResponse(result, "Assignment deleted successfully"));
-//     } catch (err) {
-//       next(err);
-//     }
-//   }
-// }
+    return successResponse({
+      data: result.data,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    });
+  }
+
+  // -------------------------------
+  // DELETE ASSIGNMENT
+  // -------------------------------
+  @Delete(':id')
+  async deleteAssignment(@Param('id') id: string) {
+    const result =
+      await this.assignmentService.deleteAssignment(id);
+
+    return successResponse(
+      result,
+      'Assignment deleted successfully',
+    );
+  }
+}

@@ -5,6 +5,7 @@ dotenv.config();
 import { DataSource } from "typeorm";
 import bcrypt from "bcrypt";
 import { Admin } from "../src/modules/admin/admin.entity";
+import { LoggingService } from "../src/core/logger/LoggingService";
 
 const dataSource = new DataSource({
   type: "postgres",
@@ -27,7 +28,7 @@ async function seed() {
 
   const existing = await repo.findOne({ where: { email } });
   if (existing) {
-    console.log("Seed admin already exists");
+    LoggingService.info("Seed admin already exists");
     process.exit(0);
   }
 
@@ -44,11 +45,11 @@ async function seed() {
 
   await repo.save(admin);
 
-  console.log(`Seeded admin: ${email}`);
+  LoggingService.info(`Seeded admin: ${email}`);
   process.exit(0);
 }
 
 seed().catch((err) => {
-  console.error("Seed error", err);
+  LoggingService.error("Seed error", err);
   process.exit(1);
 });

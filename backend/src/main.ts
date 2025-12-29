@@ -5,12 +5,19 @@ import cookieParser from "cookie-parser";
 import { AppExceptionFilter } from "./core/filters/app-exception.filter";
 import { AppDataSource } from "./config/typeorm.config";
 
-async function bootstrap() {
-  // Initialize database connection
-  await AppDataSource.initialize();
-  console.log('Database connection established');
+import { NestLogger } from "./core/logger/nest-logger";   // ⭐ ADD THIS
 
-  const app = await NestFactory.create(AppModule);
+async function bootstrap() {
+
+  await AppDataSource.initialize();
+  
+  const logger = new NestLogger();
+  logger.log('Database connection established', 'Bootstrap');
+
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  app.useLogger(logger);
 
   app.use(cookieParser());
 
@@ -28,8 +35,12 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new AppExceptionFilter());
-  
-  await app.listen(process.env.PORT || 4000);
+
+  const port = process.env.PORT || 4000;
+
+  await app.listen(port);
+
+  logger.log(`Server running on port ${port}`, 'Bootstrap');
 }
 
 bootstrap();

@@ -6,11 +6,12 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { filter } from 'rxjs/operators';
+import { LoggingService } from '../../core/services/logging.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterOutlet],
+  imports: [CommonModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -20,6 +21,7 @@ export class DashboardComponent {
   private auth = inject(AuthService);
   private dashboard = inject(DashboardService);
   private http = inject(HttpClient);  
+  private log = inject(LoggingService);
 
   today = new Date();
   sidebarCollapsed = signal(false);
@@ -69,7 +71,7 @@ export class DashboardComponent {
           totalEmployees: d.employees.total
         });
       },
-      error: (err) => console.error("Dashboard stats error:", err)
+      error: (err) => this.log.error("Dashboard stats error:", err)
     });
   }
 

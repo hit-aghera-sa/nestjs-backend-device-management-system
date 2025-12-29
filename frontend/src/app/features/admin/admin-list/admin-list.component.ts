@@ -3,6 +3,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
+import { LoggingService } from '../../../core/services/logging.service';
 
 interface Admin {
   id: string;
@@ -29,6 +30,7 @@ export class AdminListComponent implements OnInit {
   loading = signal(true);
   admins = signal<Admin[]>([]);
   errorMessage = signal<string | null>(null);
+  private log = inject(LoggingService);
 
   ngOnInit(): void {
     this.fetchAdmins();
@@ -110,8 +112,7 @@ export class AdminListComponent implements OnInit {
         this.admins.set(newList);
       },
       error: () => {
-        // silently fail or toast later if you add UI alerts
-        console.error('Failed to update status');
+        this.log.error('Failed to update status');
       }
     });
   }

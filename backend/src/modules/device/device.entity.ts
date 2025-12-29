@@ -5,7 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
-} from "typeorm";
+  OneToMany
+} from 'typeorm';
+import { Assignment } from '../assignment/assignment.entity';
 
 export type DeviceStatus =
   | "AVAILABLE"
@@ -61,4 +63,7 @@ export class Device {
 
   @UpdateDateColumn({ type: "timestamp" })
   updatedAt!: Date;
+
+  @OneToMany(() => Assignment, assignment => assignment.device)
+  assignments!: Assignment[];
 }

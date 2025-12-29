@@ -4,8 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Index
+  Index,
+  OneToMany
 } from 'typeorm';
+import { Assignment } from '../assignment/assignment.entity';
 
 export enum EmployeeStatus {
   ACTIVE = 'ACTIVE',
@@ -55,4 +57,8 @@ export class Employee {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
+
+   // One employee can have many assignments
+  @OneToMany(() => Assignment, assignment => assignment.employee)
+  assignments!: Assignment[];
 }

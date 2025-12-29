@@ -24,6 +24,13 @@ export const ASSIGNMENT_ROUTES: Routes = [
     loadComponent: () =>
       import('./assignment-history/assignment-history.component')
         .then(m => m.AssignmentHistoryComponent)
+  },
+
+  {
+    path: 'view/:id',
+    loadComponent: () =>
+      import('./assignment-view/assignment-view.component')
+        .then(m => m.AssignmentViewComponent)
   }
 
 ];

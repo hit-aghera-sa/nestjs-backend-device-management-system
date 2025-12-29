@@ -14,12 +14,12 @@ export class AssignmentHistoryComponent implements OnInit {
 
   private http = inject(HttpClient);
 
-  // Signals for dropdown data
+  // Dropdown data
   employees = signal<any[]>([]);
   devices = signal<any[]>([]);
   history = signal<any[]>([]);
 
-  // Signals for selected filters
+  // Filters
   selectedEmployee = signal<string>('');
   selectedDevice = signal<string>('');
 
@@ -37,88 +37,82 @@ export class AssignmentHistoryComponent implements OnInit {
   loadEmployees() {
     this.http.get<any>(`${environment.apiUrl}/employees`)
       .subscribe({
-        next: (res) => this.employees.set(res?.data || []),
-        error: () => this.errorMessage.set("Failed to load employees.")
+        next: (res) =>
+          this.employees.set(res?.data?.employees || res?.data || []),
+        error: () =>
+          this.errorMessage.set("Failed to load employees.")
       });
   }
 
   loadDevices() {
     this.http.get<any>(`${environment.apiUrl}/devices`)
       .subscribe({
-        next: (res) => this.devices.set(res?.data?.devices || []),
-        error: () => this.errorMessage.set("Failed to load devices.")
+        next: (res) =>
+          this.devices.set(res?.data?.devices || res?.data || []),
+        error: () =>
+          this.errorMessage.set("Failed to load devices.")
       });
   }
 
   // -------------------------------------------------------
-  // Triggered when employee is selected
+  // When employee selected
   // -------------------------------------------------------
-  loadEmployeeHistory() {
-    const emp = this.selectedEmployee();
+loadEmployeeHistory() {
+  const emp = this.selectedEmployee();
 
-    // Clear device selection when employee is chosen
-    if (emp) {
-      this.selectedDevice.set('');
-    }
+  if (emp) this.selectedDevice.set('');
 
-    this.loadHistory();
+  if (!emp) return;   // ← prevent undefined calls
+
+  this.loadHistory();
+}
+
+loadDeviceHistory() {
+  const dev = this.selectedDevice();
+
+  if (dev) this.selectedEmployee.set('');
+
+  if (!dev) return;   // ← prevent undefined calls
+
+  this.loadHistory();
+}
+
+loadHistory() {
+  this.history.set([]);
+  this.errorMessage.set(null);
+
+  const employeeId = this.selectedEmployee();
+  const deviceId = this.selectedDevice();
+
+  if (employeeId && deviceId) {
+    this.errorMessage.set("Select either Employee OR Device, not both.");
+    return;
   }
 
-  // -------------------------------------------------------
-  // Triggered when device is selected
-  // -------------------------------------------------------
-  loadDeviceHistory() {
-    const dev = this.selectedDevice();
+  if (!employeeId && !deviceId) return;
 
-    // Clear employee selection when device is chosen
-    if (dev) {
-      this.selectedEmployee.set('');
-    }
+  const params: any = {};
+  if (employeeId) params.employeeId = employeeId;
+  if (deviceId) params.deviceId = deviceId;
 
-    this.loadHistory();
-  }
+  this.loading.set(true);
 
-  // -------------------------------------------------------
-  // Fetch assignment history based on selection
-  // -------------------------------------------------------
-  loadHistory() {
-    this.history.set([]);
-    this.errorMessage.set(null);
+  this.http.get<any>(`${environment.apiUrl}/assignments/history`, { params })
+    .subscribe({
+      next: res => {
+        this.history.set(res?.data || []);
+        this.loading.set(false);
+      },
+      error: err => {
+        this.errorMessage.set(err?.error?.message || "Failed to load history.");
+        this.loading.set(false);
+      }
+    });
+}
 
-    const employeeId = this.selectedEmployee();
-    const deviceId = this.selectedDevice();
-
-    // Ensure only ONE filter is selected
-    if (employeeId && deviceId) {
-      this.errorMessage.set("Select either Employee OR Device, not both.");
-      return;
-    }
-
-    if (!employeeId && !deviceId) {
-      return; // nothing selected → show empty state
-    }
-
-    const params: any = {};
-    if (employeeId) params.employeeId = employeeId;
-    if (deviceId) params.deviceId = deviceId;
-
-    this.loading.set(true);
-
-    this.http.get<any>(`${environment.apiUrl}/assignments/history`, { params })
-      .subscribe({
-        next: (res) => {
-          this.history.set(res?.data || []);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.errorMessage.set(err?.error?.message || "Failed to load history.");
-          this.loading.set(false);
-        }
-      });
-  }
 
   // -------------------------------------------------------
-  // Format date for UI
+  // Format date
   // -------------------------------------------------------
   format(date: string) {
     return new Date(date).toLocaleDateString();

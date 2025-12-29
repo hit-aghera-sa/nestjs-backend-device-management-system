@@ -62,10 +62,13 @@ async login(credentials: LoginCredentials): Promise<boolean> {
         this.saveAuthState();
         resolve(true);
       },
-      error: (err) => reject(err)
+      error: (err) => {
+        reject(err);
+      }
     });
   });
 }
+
 
 
   // ---------------------------------------

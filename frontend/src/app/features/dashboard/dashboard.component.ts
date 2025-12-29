@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -17,16 +19,19 @@ export class DashboardComponent {
   private router = inject(Router);
   private auth = inject(AuthService);
   private dashboard = inject(DashboardService);
+  private http = inject(HttpClient);  
 
+  today = new Date();
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
   currentRoute = signal<string>(this.router.url);
 
-  stats = signal<any>(null);     // dashboard metrics
-  user = signal<any>(null);      // logged-in admin info
+  stats = signal<any>(null);
+  user = signal<any>(null);
+  activeAssignments = signal(0);
+  lowStockCount = signal(0);            
 
   constructor() {
-    // Update active nav and page title on route change
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
@@ -34,18 +39,17 @@ export class DashboardComponent {
         this.updatePageTitle(event.urlAfterRedirects);
       });
 
-    // Initial title update
     this.updatePageTitle(this.router.url);
 
-    effect(() => {
-      // console.log("Sidebar collapsed?", this.sidebarCollapsed());
-    });
+    effect(() => { });
   }
 
   ngOnInit() {
     this.initializeSidebarControls();
     this.loadStats();
     this.loadUserInfo();
+    this.loadLowStock();         
+    this.loadActiveAssignments();
   }
 
   // -------------------------------
@@ -69,6 +73,31 @@ export class DashboardComponent {
     });
   }
 
+  loadActiveAssignments() {
+    this.dashboard.getActiveAssignments().subscribe({
+      next: (res) => {
+        this.activeAssignments.set(res?.data?.count ?? 0);
+      },
+      error: () => this.activeAssignments.set(0)
+    });
+  }
+
+
+  // -------------------------------
+  // Load Low Stock Count
+  // -------------------------------
+  loadLowStock() {
+    this.http.get<any>(`${environment.apiUrl}/stock/low`)
+      .subscribe({
+        next: (res) => {
+          this.lowStockCount.set(res?.data?.length ?? 0);
+        },
+        error: () => {
+          this.lowStockCount.set(0);
+        }
+      });
+  }
+
   // -------------------------------
   // Load Logged-in Admin Info
   // -------------------------------
@@ -81,9 +110,6 @@ export class DashboardComponent {
     return this.currentRoute().startsWith(route);
   }
 
-  // -------------------------------
-  // Update Page Title
-  // -------------------------------
   updatePageTitle(route: string) {
     const pageTitle = document.getElementById('page-title');
     if (!pageTitle) return;
@@ -101,9 +127,6 @@ export class DashboardComponent {
     pageTitle.textContent = match ? map[match] : 'Dashboard';
   }
 
-  // -------------------------------
-  // Sidebar Controls (Desktop + Mobile)
-  // -------------------------------
   initializeSidebarControls() {
     const sidebar = document.getElementById('sidebar');
     const collapseBtn = document.getElementById('collapse-btn');
@@ -111,7 +134,6 @@ export class DashboardComponent {
     const mobileSidebar = document.getElementById('mobile-sidebar');
     const overlay = document.getElementById('mobile-sidebar-overlay');
 
-    // Desktop collapse
     if (collapseBtn) {
       collapseBtn.addEventListener('click', () => {
         if (!sidebar) return;
@@ -120,7 +142,6 @@ export class DashboardComponent {
       });
     }
 
-    // Mobile open button
     if (mobileMenuBtn) {
       mobileMenuBtn.addEventListener('click', () => {
         this.mobileSidebarOpen.set(true);
@@ -129,7 +150,6 @@ export class DashboardComponent {
       });
     }
 
-    // Mobile close when overlay clicked
     if (overlay) {
       overlay.addEventListener('click', () => {
         this.mobileSidebarOpen.set(false);
@@ -137,7 +157,7 @@ export class DashboardComponent {
         overlay?.classList.remove('open');
       });
     }
-  } 
+  }
 
   getInitials(): string {
     const u = this.user();
@@ -152,18 +172,15 @@ export class DashboardComponent {
 
   go(route: string) {
     this.router.navigate([route]);
-    this.mobileSidebarOpen.set(false); // also close mobile sidebar
+    this.mobileSidebarOpen.set(false);
   }
 
   goToProfile() {
     this.router.navigate(['/profile']);
   }
-  // -------------------------------
-  // Logout
-  // -------------------------------
+
   logout() {
     this.auth.logout();
     this.router.navigate(['/auth/login']);
   }
-
 }

@@ -34,31 +34,56 @@ export class LoginComponent {
       this.markFormGroupTouched(this.loginForm);
       return;
     }
-    
+
     this.loading.set(true);
     this.errorMessage.set(null);
+
+    // disable inputs during request
     this.loginForm.disable();
-    
+
     const credentials: LoginCredentials = {
       email: this.loginForm.value.email,
       password: this.loginForm.value.password
     };
-    
+
     try {
+
       const success = await this.authService.login(credentials);
+
       if (success) {
         this.router.navigate(['/dashboard']);
-      } else {
-        this.errorMessage.set('Invalid credentials. Please try again.');
+        return;
       }
-    } catch (error: any) {
-      this.errorMessage.set(error?.error?.message || 'Login failed.');
-    } finally {
-      this.loading.set(false);
+
+      this.errorMessage.set('Login failed.');
+    }
+
+    catch (err: any) {
+        switch (err?.status) {
+        case 404:
+          this.errorMessage.set('Email does not exist.');
+          break;
+
+        case 401:
+          this.errorMessage.set('Invalid password.');
+          break;
+
+        default:
+          this.errorMessage.set(
+            err?.error?.message || 'Something went wrong. Please try again.'
+          );
+      }
+    }
+
+    finally {
+
+      // ALWAYS re-enable form
       this.loginForm.enable();
+
+      // stop loader
+      this.loading.set(false);
     }
   }
-
 
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.values(formGroup.controls).forEach(control => {

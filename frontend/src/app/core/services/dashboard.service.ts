@@ -19,4 +19,10 @@ export class DashboardService {
   getCategoryStats() {
     return this.http.get(`${environment.apiUrl}/dashboard/stats`);
   }
+
+  getActiveAssignments() {
+    return this.http.get<any>(`${environment.apiUrl}/assignments/active/count`, {
+      withCredentials: true
+    });
+  }
 }

@@ -82,14 +82,15 @@ export class AssignmentListComponent implements OnInit {
       limit: number;
     }>(`${environment.apiUrl}/assignments`, { params })
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
 
-          this.total = response.total ?? 0;
-          this.page = response.page ?? this.page;
-          this.limit = response.limit ?? this.limit;
+          const list = response.data?.data || response.data?.assignments || response.data || [];
 
-          // 🔥 UPDATED — use `id` not `_id`
-          const mapped = response.data.map((a: any) => ({
+          this.total = response.data?.total || 0;
+          this.page = response.data?.page || 1;
+          this.limit = response.data?.limit || 10;
+
+          const mapped = list.map((a: any) => ({
             id: a.id,
             employee: {
               id: a.employee?.id,
@@ -152,25 +153,51 @@ export class AssignmentListComponent implements OnInit {
     return status === 'ASSIGNED' ? 'Assigned' : 'Returned';
   }
 
-  // -------------------------------------------------------
-  // Delete Assignment
-  // -------------------------------------------------------
-  deleteAssignment(id: string) {
-    if (!confirm("Are you sure you want to delete this assignment?")) return;
+  // =======================
+// DELETE CONFIRM STATES
+// =======================
+showDeleteConfirm = signal(false);
+assignmentToDeleteId: string | null = null;
 
-    this.loading.set(true);
+// Open confirm dialog
+confirmDelete(id: string) {
+  this.assignmentToDeleteId = id;
+  this.showDeleteConfirm.set(true);
+}
 
-    this.http.delete(`${environment.apiUrl}/assignments/${id}`).subscribe({
+// Cancel dialog
+cancelDelete() {
+  this.assignmentToDeleteId = null;
+  this.showDeleteConfirm.set(false);
+}
+
+// Confirm delete
+deleteAssignmentConfirmed() {
+  if (!this.assignmentToDeleteId) return;
+
+  this.loading.set(true);
+
+  this.http.delete(`${environment.apiUrl}/assignments/${this.assignmentToDeleteId}`)
+    .subscribe({
       next: () => {
-        this.assignments.set(this.assignments().filter(a => a.id !== id));
+        this.assignments.set(
+          this.assignments().filter(a => a.id !== this.assignmentToDeleteId)
+        );
+
+        this.assignmentToDeleteId = null;
+        this.showDeleteConfirm.set(false);
         this.loading.set(false);
       },
+
       error: (err) => {
         this.errorMessage.set(err?.error?.message || 'Failed to delete assignment.');
+        this.assignmentToDeleteId = null;
+        this.showDeleteConfirm.set(false);
         this.loading.set(false);
-      },
+      }
     });
-  }
+}
+
 
   totalPages() {
     return Math.ceil(this.total / this.limit);

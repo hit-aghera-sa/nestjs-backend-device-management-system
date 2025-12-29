@@ -16,7 +16,7 @@
         <option value="">-- Choose Employee --</option>
 
         <!-- FIXED SIGNAL USAGE -->
-        <option *ngFor="let emp of employees()" [value]="emp._id">
+        <option *ngFor="let emp of employees()" [value]="emp.id">
           {{ emp.fullName }} ({{ emp.department }})
         </option>
       </select>
@@ -33,7 +33,7 @@
         <option value="">-- Choose Device --</option>
 
         <!-- FIXED SIGNAL USAGE -->
-        <option *ngFor="let dev of devices()" [value]="dev._id">
+        <option *ngFor="let dev of devices()" [value]="dev.id">
           {{ dev.deviceName }} → {{ dev.serialNumber }}
         </option>
       </select>

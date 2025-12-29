@@ -4,13 +4,16 @@ import { Repository, Like } from 'typeorm';
 
 import { Device, DeviceStatus } from './device.entity';
 import AppError from '../../core/errors/AppError';
-import AssignmentRepository from '../assignment/assignment.repository';
+import { Assignment } from '../assignment/assignment.entity';
 
 @Injectable()
 export class DeviceService {
   constructor(
     @InjectRepository(Device)
     private readonly repo: Repository<Device>,
+
+    @InjectRepository(Assignment)
+    private readonly assignmentRepo: Repository<Assignment>,
   ) {}
 
   // ------------------------------------------------
@@ -105,11 +108,7 @@ export class DeviceService {
   // ------------------------------------------------
   async updateDevice(id: string, data: any) {
     await this.repo.update(id, data);
-
-    const device = await this.getDeviceById(id);
-    if (!device) throw new AppError('Device not found', 404);
-
-    return device;
+    return this.getDeviceById(id);
   }
 
   // ------------------------------------------------
@@ -117,10 +116,15 @@ export class DeviceService {
   // ------------------------------------------------
   async deleteDevice(id: string) {
     const device = await this.getDeviceById(id);
-    if (!device) throw new AppError('Device not found', 404);
 
-    const activeAssignment =
-      await AssignmentRepository.findActiveByDevice(id);
+    // 🔥 NEW — TypeORM repo instead of deleted custom repo
+    const activeAssignment = await this.assignmentRepo.findOne({
+      where: {
+        device: { id },
+        status: 'ASSIGNED',
+      },
+      relations: ['device'],
+    });
 
     if (activeAssignment) {
       throw new AppError(
@@ -138,7 +142,6 @@ export class DeviceService {
   // ------------------------------------------------
   async updateStatus(id: string, status: DeviceStatus) {
     const device = await this.getDeviceById(id);
-    if (!device) throw new AppError('Device not found', 404);
 
     if (status === 'ASSIGNED') {
       throw new AppError(
@@ -155,7 +158,6 @@ export class DeviceService {
     }
 
     await this.repo.update(id, { status });
-
     return this.getDeviceById(id);
   }
 }

@@ -6,11 +6,10 @@ import crypto from 'crypto';
 import { Employee, EmployeeStatus } from './employee.entity';
 import AppError from '../../core/errors/AppError';
 import { sendEmail } from '../../core/utils/email.util';
-import { logger } from '../../core/logger/logger';
-import AssignmentRepository from '../assignment/assignment.repository';
 
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { Assignment } from '../assignment/assignment.entity';
 
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -19,6 +18,9 @@ export class EmployeeService {
   constructor(
     @InjectRepository(Employee)
     private readonly repo: Repository<Employee>,
+
+    @InjectRepository(Assignment)
+    private readonly assignmentRepo: Repository<Assignment>,
   ) {}
 
   // ----------------------------------------------------
@@ -62,7 +64,7 @@ export class EmployeeService {
   }
 
   // ----------------------------------------------------
-  // LIST EMPLOYEES (with filters + pagination)
+  // LIST EMPLOYEES
   // ----------------------------------------------------
   async listEmployees(query: any = {}) {
     const baseWhere: any = {};
@@ -119,7 +121,7 @@ export class EmployeeService {
   }
 
   // ----------------------------------------------------
-  // UPDATE EMPLOYEE
+  // UPDATE
   // ----------------------------------------------------
   async updateEmployee(id: string, data: UpdateEmployeeDto) {
     await this.repo.update(id, data);
@@ -127,13 +129,19 @@ export class EmployeeService {
   }
 
   // ----------------------------------------------------
-  // DELETE EMPLOYEE
+  // DELETE
   // ----------------------------------------------------
   async deleteEmployee(id: string) {
     const employee = await this.getEmployeeById(id);
 
-    const activeAssignment =
-      await AssignmentRepository.findActiveByEmployee(id);
+    // 🔥 replaced deleted repo with TypeORM repo
+    const activeAssignment = await this.assignmentRepo.findOne({
+      where: {
+        employee: { id },
+        status: 'ASSIGNED',
+      },
+      relations: ['employee'],
+    });
 
     if (activeAssignment) {
       throw new AppError(
@@ -147,7 +155,7 @@ export class EmployeeService {
   }
 
   // ----------------------------------------------------
-  // VERIFY EMPLOYEE
+  // VERIFY
   // ----------------------------------------------------
   async verifyEmployee(token: string) {
     const employee = await this.repo.findOne({
@@ -173,7 +181,7 @@ export class EmployeeService {
   }
 
   // ----------------------------------------------------
-  // RESEND VERIFICATION EMAIL
+  // RESEND VERIFICATION
   // ----------------------------------------------------
   async resendVerification(email: string) {
     const employee = await this.repo.findOne({ where: { email } });

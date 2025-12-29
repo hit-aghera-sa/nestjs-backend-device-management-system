@@ -16,7 +16,7 @@ import { environment } from '../../../environments/environment';
 export class ProfileComponent implements OnInit {
 
   private fb = inject(FormBuilder);
-  private http = inject(HttpClient);      // ✅ FIXED
+  private http = inject(HttpClient);
   private router = inject(Router);
   private auth = inject(AuthService);
 
@@ -43,7 +43,6 @@ export class ProfileComponent implements OnInit {
     this.loadProfile();
   }
 
-  // 🔥 Load from AuthService (NOT manual /auth/me)
   loadProfile() {
     this.loading.set(true);
 
@@ -65,37 +64,50 @@ export class ProfileComponent implements OnInit {
     this.loading.set(false);
   }
 
-  // 🔥 Update profile
   updateProfile() {
-    if (this.profileForm.invalid) return;
+  if (this.profileForm.invalid) return;
 
-    this.savingProfile.set(true);
-    this.errorMessage.set(null);
-    this.successMessage.set(null);
+  this.savingProfile.set(true);
+  this.errorMessage.set(null);
+  this.successMessage.set(null);
 
-    this.http.patch(`${environment.apiUrl}/auth/update`, this.profileForm.value)
-      .subscribe({
-        next: () => {
-          this.savingProfile.set(false);
-          this.successMessage.set('Profile updated successfully.');
+  const payload = {
+    fullName: this.profileForm.value.fullName,
+    email: this.profileForm.value.email
+  };
 
-          // Reload user from backend
-          this.loadProfile();
+  this.http.patch(`${environment.apiUrl}/auth/profile`, payload)
+    .subscribe({
+      next: (res: any) => {
+        this.savingProfile.set(false);
+        this.successMessage.set('Profile updated successfully.');
 
-          setTimeout(() => this.successMessage.set(null), 3000);
-        },
-        error: (err) => {
-          this.savingProfile.set(false);
-          this.errorMessage.set(err?.error?.message || 'Failed to update profile.');
-        }
-      });
-  }
+        // refresh local state
+        const updated = {
+          ...this.user(),
+          ...payload
+        };
 
-  // 🔥 Change password, then logout
+        localStorage.setItem('auth_state', JSON.stringify({ user: updated }));
+        this.user.set(updated);
+
+        setTimeout(() => this.successMessage.set(null), 3000);
+      },
+      error: (err) => {
+        this.savingProfile.set(false);
+        this.errorMessage.set(
+          err?.error?.message || 'Failed to update profile.'
+        );
+      }
+    });
+}
+
+
   changePassword() {
     if (this.passwordForm.invalid) return;
 
-    const { currentPassword, newPassword, confirmNewPassword } = this.passwordForm.value;
+    const { currentPassword, newPassword, confirmNewPassword } =
+      this.passwordForm.value;
 
     if (newPassword !== confirmNewPassword) {
       this.errorMessage.set('New password and confirmation do not match.');
@@ -114,7 +126,6 @@ export class ProfileComponent implements OnInit {
         this.savingPassword.set(false);
         this.successMessage.set('Password updated successfully.');
 
-        // Logout fully
         this.auth.logout();
 
         setTimeout(() => {
@@ -127,7 +138,9 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         this.savingPassword.set(false);
-        this.errorMessage.set(err?.error?.message || 'Failed to update password.');
+        this.errorMessage.set(
+          err?.error?.message || 'Failed to update password.'
+        );
       }
     });
   }

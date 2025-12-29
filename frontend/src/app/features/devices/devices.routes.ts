@@ -1,4 +1,3 @@
-// src/app/features/devices/devices.routes.ts
 import { Routes } from '@angular/router';
 import { authGuard } from '../../core/guards/auth.guard';
 

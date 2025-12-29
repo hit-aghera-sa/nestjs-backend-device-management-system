@@ -219,4 +219,27 @@ export class AssignmentService {
 
     return { deleted: true };
   }
+
+  async getHistory(employeeId?: string, deviceId?: string) {
+
+    const where: any = {};
+
+    if (employeeId) where.employee = { id: employeeId };
+    if (deviceId) where.device = { id: deviceId };
+
+    const history = await this.assignmentRepo.find({
+        where,
+        relations: ['employee', 'device'],
+        order: { assignedAt: 'DESC' },
+    });
+
+    return history;
+    }
+
+    async getActiveAssignmentCount() {
+        return this.assignmentRepo.count({
+            where: { status: 'ASSIGNED' }
+        });
+    }
+
 }

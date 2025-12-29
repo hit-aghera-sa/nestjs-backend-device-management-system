@@ -62,6 +62,19 @@ export class AssignmentController {
   }
 
   // -------------------------------
+  // HISTORY (must be BEFORE :id)
+  // -------------------------------
+  @Get('history')
+  async getHistory(
+    @Query('employeeId') employeeId?: string,
+    @Query('deviceId') deviceId?: string,
+  ) {
+    return successResponse(
+      await this.assignmentService.getHistory(employeeId, deviceId),
+    );
+  }
+
+  // -------------------------------
   // GET ASSIGNMENT BY ID
   // -------------------------------
   @Get(':id')
@@ -113,4 +126,14 @@ export class AssignmentController {
       'Assignment deleted successfully',
     );
   }
+
+    // -------------------------------
+    // ACTIVE ASSIGNMENT COUNT
+    // -------------------------------
+    @Get('active/count')
+    async getActiveCount() {
+    const count = await this.assignmentService.getActiveAssignmentCount();
+
+    return successResponse({ count });
+    }
 }

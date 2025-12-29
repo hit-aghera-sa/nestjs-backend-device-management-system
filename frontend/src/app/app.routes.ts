@@ -1,119 +1,77 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { masterAdminGuard } from './core/guards/master-admin.guard';
+import { LayoutComponent } from './shared/components/layout/layout.component';
 
 export const routes: Routes = [
+
   {
     path: 'auth',
-    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
-  },
-
-  {
-    path: 'dashboard',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
-  },
-
-  {
-    path: 'admin-management',
-    canActivate: [authGuard, masterAdminGuard],
-    loadComponent: () =>
-      import('./features/admin/admin-list/admin-list.component')
-        .then(m => m.AdminListComponent)
-  },
-
-  {
-    path: 'admin-management/create',
-    canActivate: [authGuard, masterAdminGuard],
-    loadComponent: () =>
-      import('./features/admin/admin-create/admin-create.component')
-        .then(m => m.AdminCreateComponent)
-  },
-
-  {
-    path: 'admin-management/view/:id',
-    canActivate: [authGuard, masterAdminGuard],
-    loadComponent: () =>
-      import('./features/admin/admin-view/admin-view.component')
-        .then(m => m.AdminViewComponent)
-  },
-
-  {
-    path: 'admin-management/edit/:id',
-    canActivate: [authGuard, masterAdminGuard],
-    loadComponent: () =>
-      import('./features/admin/admin-edit/admin-edit.component')
-        .then(m => m.AdminEditComponent)
-  },
-
-  {
-    path: 'profile',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/profile/profile.component').then(m => m.ProfileComponent)
-  },
-
-  {
-    path: 'employees',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/employees/employees-list/employees-list.component')
-        .then(m => m.EmployeesListComponent)
-  },
-
-  {
-    path: 'employees/create',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/employees/employees-create/employees-create.component')
-        .then(m => m.EmployeesCreateComponent)
-  },
-
-  {
-    path: 'verify-employee',
-    loadComponent: () =>
-      import('./features/employees/verify-employee/verify-employee.component')
-        .then(m => m.VerifyEmployeeComponent)
-  },
-
-  {
-    path: 'employees/view/:id',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/employees/employees-view/employees-view.component')
-        .then(m => m.EmployeesViewComponent)
-  },
-
-  {
-    path: 'employees/edit/:id',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/employees/employees-edit/employees-edit.component')
-        .then(m => m.EmployeesEditComponent)
-  },
-
-  {
-    path: 'devices',
-    canActivate: [authGuard],
     loadChildren: () =>
-      import('./features/devices/devices.routes').then(m => m.DEVICES_ROUTES)
+      import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
 
   {
-    path: 'assignments',
+    path: '',
     canActivate: [authGuard],
-    loadChildren: () =>
-      import('./features/assignments/assignment.routes')
-        .then(m => m.ASSIGNMENT_ROUTES)
+    component: LayoutComponent,
+    children: [
+
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component')
+            .then(m => m.DashboardComponent)
+      },
+
+      {
+        path: 'admin-management',
+        canActivate: [masterAdminGuard],
+        loadChildren: () =>
+          import('./features/admin/admin.routes')
+            .then(m => m.ADMIN_ROUTES)
+      },
+
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile.component')
+            .then(m => m.ProfileComponent)
+      },
+
+      {
+        path: 'employees',
+        loadChildren: () =>
+          import('./features/employees/employees.routes')
+            .then(m => m.EMPLOYEE_ROUTES)
+      },
+
+      {
+        path: 'devices',
+        loadChildren: () =>
+          import('./features/devices/devices.routes')
+            .then(m => m.DEVICES_ROUTES)
+      },
+
+      {
+        path: 'assignments',
+        loadChildren: () =>
+          import('./features/assignments/assignment.routes')
+            .then(m => m.ASSIGNMENT_ROUTES)
+      },
+
+      {
+        path: 'stock',
+        loadChildren: () =>
+          import('./features/stock/stock.router')
+            .then(m => m.STOCK_ROUTES)
+      },
+
+      // default after login
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ]
   },
 
-  {
-    path: 'stock',
-    canActivate: [authGuard],
-    loadChildren: () =>
-      import('./features/stock/stock.router').then(m => m.STOCK_ROUTES)
-  },
-
-  { path: '', redirectTo: '/auth/login', pathMatch: 'full' },
-  { path: '**', redirectTo: '/auth/login', pathMatch: 'full' }
+  // ---------------- FALLBACK ----------------
+  { path: '**', redirectTo: '/auth/login' }
 ];

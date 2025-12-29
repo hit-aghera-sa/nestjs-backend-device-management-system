@@ -55,38 +55,88 @@ export class AdminController {
   // --------------------------------------------------
   // LOGIN
   // --------------------------------------------------
-  @Post("login")
-  async login(@Body() dto: LoginDto, @Res() res: any) {
-    try {
-      const result = await this.adminService.login(dto);
+  // @Post("login")
+  // async login(@Body() dto: LoginDto, @Res() res: any) {
+  //   try {
+  //     const result = await this.adminService.login(dto);
 
-      res.cookie("token", result.token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000,
-      });
+  //     res.cookie("token", result.token, {
+  //       httpOnly: true,
+  //       secure: false,
+  //       sameSite: "lax",
+  //       maxAge: 24 * 60 * 60 * 1000,
+  //     });
 
-      return res.status(200).json(
-        successResponse(
-          {
-            admin: {
-              id: result.admin.id,
-              email: result.admin.email,
-              fullName: result.admin.fullName,
-              role: result.admin.role,
-            },
+  //     return res.status(200).json(
+  //       successResponse(
+  //         {
+  //           admin: {
+  //             id: result.admin.id,
+  //             email: result.admin.email,
+  //             fullName: result.admin.fullName,
+  //             role: result.admin.role,
+  //           },
+  //         },
+  //         "Login successful"
+  //       )
+  //     );
+  //   } catch (err) {
+  //     if (err instanceof AppError) {
+  //       throw new HttpException(err.message, err.statusCode);
+  //     }
+
+  //     if (err instanceof HttpException) {
+  //       throw err;
+  //     }
+
+  //     throw new HttpException('Internal server error', 500);
+  //   }
+  // }
+// --------------------------------------------------
+// LOGIN
+// --------------------------------------------------
+@Post("login")
+async login(@Body() dto: LoginDto, @Res() res: any) {
+  try {
+
+    const result = await this.adminService.login(dto);
+
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json(
+      successResponse(
+        {
+          admin: {
+            id: result.admin.id,
+            email: result.admin.email,
+            fullName: result.admin.fullName,
+            role: result.admin.role,
           },
-          "Login successful"
-        )
-      );
-    } catch (err) {
-      if (err instanceof AppError)
-        throw new HttpException(err.message, err.statusCode);
+        },
+        "Login successful"
+      )
+    );
 
-      throw new HttpException("Internal server error", 500);
+  } catch (err) {
+
+    // ⭐ DO NOT wrap AppError into 500
+    if (err instanceof AppError) {
+      return res
+        .status(err.statusCode)
+        .json({ status: "error", message: err.message });
     }
+
+    // ⭐ Only unexpected errors become 500
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
   }
+}
 
   // --------------------------------------------------
   // VERIFY EMAIL

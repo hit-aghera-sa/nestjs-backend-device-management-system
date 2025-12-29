@@ -44,7 +44,10 @@ export class AssignmentCreateComponent implements OnInit {
     this.http.get<any>(`${environment.apiUrl}/employees`)
       .subscribe({
         next: (res) => {
-          this.employees.set(res?.data || []);
+          // supports both old + new API shapes
+          this.employees.set(
+            res?.data?.employees || res?.data || []
+          );
         },
         error: () => {
           this.errorMessage.set("Failed to load employees.");
@@ -60,7 +63,9 @@ export class AssignmentCreateComponent implements OnInit {
       .subscribe({
         next: (res) => {
           // backend returns { data: { devices: [...] } }
-          this.devices.set(res?.data?.devices || res?.data || []);
+          this.devices.set(
+            res?.data?.devices || res?.data || []
+          );
         },
         error: () => {
           this.errorMessage.set("Failed to load available devices.");

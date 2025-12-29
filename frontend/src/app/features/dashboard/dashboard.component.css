@@ -1,100 +1,88 @@
-/* src/app/features/dashboard/dashboard.component.css */
-:root {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --sidebar-width: 16rem;
-  --sidebar-collapsed: 5rem;
-  --transition-speed: 300ms;
-}
-
-/* Navigation Active State */
-.nav-item-active {
-  background-color: rgba(37, 99, 235, 0.1);
-  border-left: 3px solid var(--primary-color);
-  color: var(--primary-color);
-}
-
-.nav-item-active .icon {
-  color: var(--primary-color);
-}
-
-.nav-item-active .label {
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-/* Mobile Sidebar States */
-.mobile-sidebar.open {
-  transform: translateX(0);
-}
-
-.mobile-sidebar-overlay.open {
-  display: block;
-  opacity: 1;
-}
-
-.mobile-sidebar-overlay {
-  opacity: 0;
-  transition: opacity var(--transition-speed) ease;
-}
-
-/* Smooth transitions for sidebar collapse */
-#sidebar.collapsed {
-  width: var(--sidebar-collapsed);
-}
-
-#sidebar.collapsed .label {
-  display: none;
-}
-
-#sidebar.collapsed #collapse-btn .icon {
-  transform: rotate(180deg);
-}
-
-/* Accessibility focus styles */
-.nav-link:focus-visible,
-#collapse-btn:focus-visible,
-#logout-btn:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* Responsive table container */
-@media (max-width: 768px) {
-  .mobile-sidebar-overlay {
-    z-index: 40;
-  }
-  
-  .mobile-sidebar {
-    z-index: 50;
-  }
-}
-
-/* Print styles */
-@media print {
-  #sidebar,
-  .mobile-sidebar-overlay,
-  .mobile-sidebar,
-  header {
-    display: none !important;
-  }
-  
-  #app-content {
-    padding: 0;
-    margin: 0;
-  }
-}
 /* Dashboard Tiles */
 .dashboard-tile {
-  @apply bg-white border border-gray-200 rounded-xl p-6 shadow-sm 
-         hover:shadow-md hover:bg-gray-50 transition cursor-pointer
-         flex flex-col items-start gap-3 text-left;
+  @apply bg-white border border-gray-200 rounded-2xl p-6 shadow-sm 
+         hover:shadow-xl hover:-translate-y-1 transition-all duration-300 
+         cursor-pointer text-left relative overflow-hidden
+         backdrop-blur-sm backdrop-filter bg-opacity-90;
 }
 
 .dashboard-tile h3 {
-  @apply text-lg font-semibold text-gray-800;
+  @apply text-lg font-semibold text-gray-900;
 }
 
 .dashboard-tile p {
-  @apply text-sm text-gray-600;
+  @apply text-sm text-gray-600 leading-relaxed;
+}
+
+/* Progress Bar Animation */
+.dashboard-tile:hover .progress-fill {
+  animation: progressFill 1.5s ease-out forwards;
+}
+
+@keyframes progressFill {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Glassmorphism Effect */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Hover Shine Effect */
+.shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  transition: transform 0.6s;
+}
+
+.shine-effect:hover::after {
+  transform: rotate(30deg) translate(20%, 20%);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .dashboard-tile {
+    @apply p-4;
+  }
+  
+  .dashboard-tile h3 {
+    @apply text-base;
+  }
+  
+  .dashboard-tile p {
+    @apply text-xs;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .dashboard-tile,
+  .stats-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
 }

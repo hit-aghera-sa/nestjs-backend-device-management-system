@@ -6,6 +6,23 @@
     <p class="text-gray-600">Device inventory by category</p>
   </div>
 
+  <!-- LOW STOCK ALERT -->
+@if (!loading() && lowStock().length > 0) {
+  <div class="mb-4 p-4 bg-red-50 border border-red-300 rounded-lg">
+    <h3 class="font-semibold text-red-700 mb-2">⚠ Low Stock Alert</h3>
+
+    <ul class="list-disc pl-6 text-red-700">
+      @for (item of lowStock(); track item.category) {
+        <li>
+          {{ item.category }} — 
+          Only <strong>{{ item.available }}</strong> available
+        </li>
+      }
+    </ul>
+  </div>
+}
+
+
   <!-- Error -->
   @if (errorMessage()) {
     <div class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-4">

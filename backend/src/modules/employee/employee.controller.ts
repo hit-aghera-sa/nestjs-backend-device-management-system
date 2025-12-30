@@ -8,6 +8,7 @@ import {
   Body,
   Req,
   HttpException,
+  UseGuards
 } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -18,7 +19,9 @@ import AppError from '../../core/errors/AppError';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { AuthGuard } from '../../core/guards/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('employees')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}

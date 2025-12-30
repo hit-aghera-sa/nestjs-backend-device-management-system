@@ -6,12 +6,15 @@ import {
   Param,
   Body,
   Query,
+  UseGuards
 } from '@nestjs/common';
 
 import { AssignmentService } from './assignment.service';
 import { successResponse } from '../../core/utils/response.util';
 import { DeviceStatus } from '../device/device.entity';
+import { AuthGuard } from '../../core/guards/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('assignments')
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}

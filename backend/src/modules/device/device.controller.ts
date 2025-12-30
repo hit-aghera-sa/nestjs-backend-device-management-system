@@ -1,4 +1,4 @@
-import { Query, Controller, Get, Post, Patch, Put, Delete, Param, Body } from '@nestjs/common';
+import { Query, Controller, Get, Post, Patch, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { DeviceService } from './device.service';
 import { successResponse } from '../../core/utils/response.util';
 
@@ -6,7 +6,9 @@ import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 import { UpdateDeviceStatusDto } from './dto/update-device-status.dto';
 import { ListDevicesDto } from './dto/list-devices.dto';
+import { AuthGuard } from '../../core/guards/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('devices')
 export class DeviceController {
   constructor(private readonly deviceService: DeviceService) {}

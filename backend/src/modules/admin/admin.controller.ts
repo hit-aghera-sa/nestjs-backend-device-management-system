@@ -15,7 +15,6 @@ import { successResponse } from "../../core/utils/response.util";
 import AppError from "../../core/errors/AppError";
 import { AuthGuard } from "../../core/guards/auth.guard";
 
-// ⭐ NEW — import DTOs
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";

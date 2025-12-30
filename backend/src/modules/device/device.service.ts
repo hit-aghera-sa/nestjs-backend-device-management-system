@@ -117,7 +117,7 @@ export class DeviceService {
   async deleteDevice(id: string) {
     const device = await this.getDeviceById(id);
 
-    // 🔥 NEW — TypeORM repo instead of deleted custom repo
+    // TypeORM repo instead of deleted custom repo
     const activeAssignment = await this.assignmentRepo.findOne({
       where: {
         device: { id },

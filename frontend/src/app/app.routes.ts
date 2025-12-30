@@ -5,12 +5,21 @@ import { LayoutComponent } from './shared/components/layout/layout.component';
 
 export const routes: Routes = [
 
+  // ---------- PUBLIC VERIFY ROUTE (NO AUTH) ----------
+  {
+    path: 'verify-employee',
+    loadComponent: () =>
+      import('./features/employees/verify-employee/verify-employee.component')
+        .then(m => m.VerifyEmployeeComponent)
+  },
+
   {
     path: 'auth',
     loadChildren: () =>
       import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
 
+  // ---------- PROTECTED LAYOUT ----------
   {
     path: '',
     canActivate: [authGuard],
@@ -72,6 +81,6 @@ export const routes: Routes = [
     ]
   },
 
-  // ---------------- FALLBACK ----------------
+  // ---------- FALLBACK ----------
   { path: '**', redirectTo: '/auth/login' }
 ];

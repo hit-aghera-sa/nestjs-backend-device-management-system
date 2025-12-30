@@ -21,11 +21,11 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { AuthGuard } from '../../core/guards/auth.guard';
 
-@UseGuards(AuthGuard)
 @Controller('employees')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
+ @UseGuards(AuthGuard)
   @Post()
   async createEmployee(@Body() body: CreateEmployeeDto) {
     const employee = await this.employeeService.createEmployee(body);
@@ -43,6 +43,7 @@ export class EmployeeController {
     );
   }
 
+  @UseGuards(AuthGuard)
   @Get()
   async getEmployees(@Req() req: Request) {
     const result = await this.employeeService.listEmployees(req.query);
@@ -62,12 +63,14 @@ export class EmployeeController {
     }
   }
 
+  @UseGuards(AuthGuard)
   @Get(':id')
   async getEmployeeById(@Param('id') id: string) {
     const employee = await this.employeeService.getEmployeeById(id);
     return successResponse(employee);
   }
 
+  @UseGuards(AuthGuard)
   @Patch(':id')
   async updateEmployee(
     @Param('id') id: string,
@@ -77,6 +80,7 @@ export class EmployeeController {
     return successResponse(updated, 'Employee updated');
   }
 
+  @UseGuards(AuthGuard)
   @Delete(':id')
   async deleteEmployee(@Param('id') id: string) {
     await this.employeeService.deleteEmployee(id);

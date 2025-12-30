@@ -63,9 +63,7 @@ export class DeviceCreateComponent {
           this.loading.set(false);
           this.successMessage.set('Device created successfully!');
           this.deviceForm.reset();
-          setTimeout(() => {
-            this.router.navigate(['/devices']);
-          }, 1200);
+          this.router.navigate(['/devices']);
         },
         error: (err) => {
           this.loading.set(false);

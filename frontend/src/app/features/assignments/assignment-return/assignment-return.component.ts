@@ -89,10 +89,7 @@ export class AssignmentReturnComponent implements OnInit {
       .subscribe({
         next: () => {
           this.successMessage.set("Device successfully returned and assignment updated.");
-
-          setTimeout(() => {
-            this.router.navigate(['/assignments']);
-          }, 1500);
+          this.router.navigate(['/assignments']);
         },
         error: (err) => {
           this.errorMessage.set(

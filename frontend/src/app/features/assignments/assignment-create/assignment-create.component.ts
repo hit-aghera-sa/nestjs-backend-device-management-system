@@ -97,10 +97,7 @@ export class AssignmentCreateComponent implements OnInit {
         next: () => {
           this.successMessage.set("Assignment created successfully!");
           this.assignmentForm.reset();
-
-          setTimeout(() => {
-            this.router.navigate(['/assignments']);
-          }, 1200);
+          this.router.navigate(['/assignments']);
         },
         error: (error) => {
           this.errorMessage.set(

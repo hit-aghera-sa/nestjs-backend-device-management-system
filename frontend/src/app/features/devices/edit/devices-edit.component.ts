@@ -116,10 +116,7 @@ export class DeviceEditComponent implements OnInit {
         next: () => {
           this.saving.set(false);
           this.successMessage.set('Device updated successfully.');
-
-          setTimeout(() => {
-            this.router.navigate(['/devices']);
-          }, 1200);
+          this.router.navigate(['/devices']);
         },
         error: (err) => {
           this.saving.set(false);

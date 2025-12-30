@@ -90,8 +90,6 @@ export class ProfileComponent implements OnInit {
 
         localStorage.setItem('auth_state', JSON.stringify({ user: updated }));
         this.user.set(updated);
-
-        setTimeout(() => this.successMessage.set(null), 3000);
       },
       error: (err) => {
         this.savingProfile.set(false);
@@ -128,11 +126,9 @@ export class ProfileComponent implements OnInit {
 
         this.auth.logout();
 
-        setTimeout(() => {
-          this.router.navigate(['/auth/login'], {
-            queryParams: { msg: 'Password updated. Please log in again.' }
-          });
-        }, 1200);
+        this.router.navigate(['/auth/login'], {
+          queryParams: { msg: 'Password updated. Please log in again.' }
+        });
 
         this.passwordForm.reset();
       },

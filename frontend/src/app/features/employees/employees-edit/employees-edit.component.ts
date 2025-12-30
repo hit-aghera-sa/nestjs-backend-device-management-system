@@ -85,7 +85,6 @@ export class EmployeesEditComponent implements OnInit {
         error: (err) => {
           this.saving.set(false);
           this.errorMessage.set(err?.error?.message || 'Failed to update employee.');
-          setTimeout(() => this.errorMessage.set(null), 3000);
         }
       });
   }
